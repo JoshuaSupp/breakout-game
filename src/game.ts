@@ -1,16 +1,21 @@
 import * as PIXI from 'pixi.js';
 
-// Game constants
-const GAME_WIDTH = 800;
-const GAME_HEIGHT = 600;
-const PADDLE_WIDTH = 100;
-const PADDLE_HEIGHT = 20;
-const BALL_RADIUS = 10;
-const BRICK_WIDTH = 75;
-const BRICK_HEIGHT = 20;
+// Responsive game constants (will be calculated based on screen size)
+let GAME_WIDTH = 800;
+let GAME_HEIGHT = 600;
+let PADDLE_WIDTH = 100;
+let PADDLE_HEIGHT = 20;
+let BALL_RADIUS = 10;
+let BRICK_WIDTH = 75;
+let BRICK_HEIGHT = 20;
 const BRICK_ROWS = 8;
 const BRICK_COLS = 10;
-const BRICK_PADDING = 5;
+let BRICK_PADDING = 5;
+
+// Base dimensions for scaling calculations
+const BASE_WIDTH = 800;
+const BASE_HEIGHT = 600;
+let SCALE_FACTOR = 1;
 
 interface Velocity {
     x: number;
@@ -34,6 +39,7 @@ export class BreakoutGame {
     private gameOverText: PIXI.Text | null = null;
     private winText: PIXI.Text | null = null;
     private username: string = '';
+    private resizeHandler: () => void;
 
     constructor() {
         this.app = new PIXI.Application();
@@ -49,16 +55,39 @@ export class BreakoutGame {
         this.ball = new PIXI.Graphics();
         this.bricks = [];
         this.ballVelocity = { x: 3, y: -3 };
+        
+        // Calculate responsive dimensions
+        this.calculateResponsiveDimensions();
+        
+        // Bind resize handler
+        this.resizeHandler = this.handleResize.bind(this);
     }
 
     async start(): Promise<void> {
-        await this.app.init({ width: GAME_WIDTH, height: GAME_HEIGHT, antialias: true });
+        await this.app.init({ 
+            width: GAME_WIDTH, 
+            height: GAME_HEIGHT, 
+            antialias: true,
+            resolution: window.devicePixelRatio || 1,
+            autoDensity: true
+        });
         globalThis.__PIXI_APP__ = this.app;
         this.app.renderer.background.color = 0x0000;
+        
+        // Set canvas to be responsive
+        this.app.canvas.style.width = '100%';
+        this.app.canvas.style.height = '100%';
+        this.app.canvas.style.display = 'block';
+        
         const gameContainer = document.getElementById('gameContainer');
         if (gameContainer) {
             gameContainer.appendChild(this.app.canvas);
+            gameContainer.style.width = GAME_WIDTH + 'px';
+            gameContainer.style.height = GAME_HEIGHT + 'px';
+            gameContainer.style.maxWidth = '100vw';
+            gameContainer.style.maxHeight = '100vh';
         }
+        
         this.app.stage.addChild(this.bricksContainer);
         this.app.stage.addChild(this.gameObjectsContainer);
         this.setupUsernamePopup();
@@ -68,6 +97,9 @@ export class BreakoutGame {
         }
         this.setupEventListeners();
         this.app.ticker.add(this.gameLoop.bind(this));
+        
+        // Add resize listener
+        window.addEventListener('resize', this.resizeHandler);
     }
 
     private initializeGame(): void {
@@ -289,6 +321,61 @@ export class BreakoutGame {
         
         if (scoreElement) scoreElement.textContent = this.score.toString();
         if (livesElement) livesElement.textContent = this.lives.toString();
+    }
+
+    private calculateResponsiveDimensions(): void {
+        // Get viewport dimensions
+        const viewportWidth = Math.min(window.innerWidth * 0.9, 1200); // Max 1200px
+        const viewportHeight = Math.min(window.innerHeight * 0.8, 800); // Max 800px
+        
+        // Calculate scale factor to maintain aspect ratio
+        const widthScale = viewportWidth / BASE_WIDTH;
+        const heightScale = viewportHeight / BASE_HEIGHT;
+        SCALE_FACTOR = Math.min(widthScale, heightScale);
+        
+        // Apply scaling to game dimensions
+        GAME_WIDTH = Math.floor(BASE_WIDTH * SCALE_FACTOR);
+        GAME_HEIGHT = Math.floor(BASE_HEIGHT * SCALE_FACTOR);
+        PADDLE_WIDTH = Math.floor(100 * SCALE_FACTOR);
+        PADDLE_HEIGHT = Math.floor(20 * SCALE_FACTOR);
+        BALL_RADIUS = Math.floor(10 * SCALE_FACTOR);
+        BRICK_WIDTH = Math.floor(75 * SCALE_FACTOR);
+        BRICK_HEIGHT = Math.floor(20 * SCALE_FACTOR);
+        BRICK_PADDING = Math.floor(5 * SCALE_FACTOR);
+        
+        // Update mouse position for new dimensions
+        this.mouseX = GAME_WIDTH / 2;
+    }
+
+    private handleResize(): void {
+        // Recalculate dimensions
+        this.calculateResponsiveDimensions();
+        
+        // Update canvas and container sizes
+        if (this.app && this.app.renderer) {
+            this.app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
+            
+            const gameContainer = document.getElementById('gameContainer');
+            if (gameContainer) {
+                gameContainer.style.width = GAME_WIDTH + 'px';
+                gameContainer.style.height = GAME_HEIGHT + 'px';
+            }
+            
+            // Reinitialize game with new dimensions if currently playing
+            if (this.gameState === 'playing') {
+                this.initializeGame();
+            }
+        }
+    }
+
+    public destroy(): void {
+        // Clean up resize listener
+        window.removeEventListener('resize', this.resizeHandler);
+        
+        // Destroy PIXI app
+        if (this.app) {
+            this.app.destroy(true);
+        }
     }
 
     private setupUsernamePopup(): void {
