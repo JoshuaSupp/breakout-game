@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "lib": ["ES2020", "DOM"],
-    "outDir": "./dist",
+    "outDir": "dist 0",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
@@ -17,5 +17,5 @@
     "types": [] // prevent auto-inclusion of legacy @types packages
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist 0"]
 }

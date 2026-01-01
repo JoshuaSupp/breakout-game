@@ -40,6 +40,13 @@ export class BreakoutGame {
     private winText: PIXI.Text | null = null;
     private username: string = '';
     private resizeHandler: () => void;
+    
+    // Touch/Mobile properties
+    private isDragging: boolean = false;
+    private lastTouchX: number = 0;
+    private baseBallSpeed: number = 3;
+    private deltaTime: number = 1;
+    private lastTime: number = 0;
 
     constructor() {
         this.app = new PIXI.Application();
@@ -54,10 +61,13 @@ export class BreakoutGame {
         this.paddle = new PIXI.Graphics();
         this.ball = new PIXI.Graphics();
         this.bricks = [];
-        this.ballVelocity = { x: 3, y: -3 };
+        this.ballVelocity = { x: this.baseBallSpeed, y: -this.baseBallSpeed };
         
         // Calculate responsive dimensions
         this.calculateResponsiveDimensions();
+        
+        // Adjust ball speed for mobile devices
+        this.adjustSpeedForDevice();
         
         // Bind resize handler
         this.resizeHandler = this.handleResize.bind(this);
@@ -149,10 +159,33 @@ export class BreakoutGame {
     }
 
     private setupEventListeners(): void {
-        // Mouse movement for paddle control (v8: use canvas)
+        // Mouse movement for paddle control
         this.app.canvas.addEventListener('mousemove', (e: MouseEvent) => {
             const rect = this.app.canvas.getBoundingClientRect();
             this.mouseX = e.clientX - rect.left;
+        });
+
+        // Touch events for mobile
+        this.app.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+            e.preventDefault();
+            this.isDragging = true;
+            const rect = this.app.canvas.getBoundingClientRect();
+            this.lastTouchX = e.touches[0].clientX - rect.left;
+            this.mouseX = this.lastTouchX;
+        });
+
+        this.app.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+            e.preventDefault();
+            if (this.isDragging) {
+                const rect = this.app.canvas.getBoundingClientRect();
+                this.lastTouchX = e.touches[0].clientX - rect.left;
+                this.mouseX = this.lastTouchX;
+            }
+        });
+
+        this.app.canvas.addEventListener('touchend', (e: TouchEvent) => {
+            e.preventDefault();
+            this.isDragging = false;
         });
 
         // Keyboard controls
@@ -171,6 +204,15 @@ export class BreakoutGame {
         if (this.gameState === 'start') return;
         if (this.gameState !== 'playing') return;
 
+        // Calculate delta time for consistent speed across devices
+        const currentTime = performance.now();
+        if (this.lastTime === 0) this.lastTime = currentTime;
+        this.deltaTime = (currentTime - this.lastTime) / 16.67; // Normalize to 60fps
+        this.lastTime = currentTime;
+
+        // Clamp delta time to prevent large jumps
+        this.deltaTime = Math.min(this.deltaTime, 2);
+
         this.updatePaddle();
         this.updateBall();
         this.checkCollisions();
@@ -187,8 +229,10 @@ export class BreakoutGame {
     }
 
     private updateBall(): void {
-        this.ball.x += this.ballVelocity.x;
-        this.ball.y += this.ballVelocity.y;
+        // Apply delta time to make ball speed consistent across devices
+        const speedMultiplier = this.deltaTime;
+        this.ball.x += this.ballVelocity.x * speedMultiplier;
+        this.ball.y += this.ballVelocity.y * speedMultiplier;
 
         // Ball collision with walls
         if (this.ball.x <= BALL_RADIUS || this.ball.x >= GAME_WIDTH - BALL_RADIUS) {
@@ -258,8 +302,8 @@ export class BreakoutGame {
     private resetBall(): void {
         this.ball.x = GAME_WIDTH / 2;
         this.ball.y = GAME_HEIGHT / 2;
-        this.ballVelocity.x = Math.random() > 0.5 ? 3 : -3;
-        this.ballVelocity.y = -3;
+        this.ballVelocity.x = Math.random() > 0.5 ? this.baseBallSpeed : -this.baseBallSpeed;
+        this.ballVelocity.y = -this.baseBallSpeed;
     }
 
     private showPopup(title: string, message: string): void {
@@ -347,9 +391,32 @@ export class BreakoutGame {
         this.mouseX = GAME_WIDTH / 2;
     }
 
+    private adjustSpeedForDevice(): void {
+        // Reduce ball speed on mobile devices for better playability
+        if (window.innerWidth <= 768) {
+            this.baseBallSpeed = 2.5; // Slower on mobile
+        } else {
+            this.baseBallSpeed = 3; // Normal speed on desktop
+        }
+        
+        // Update current velocity if game is running
+        if (this.ballVelocity) {
+            const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
+            if (currentSpeed > 0) {
+                const directionX = this.ballVelocity.x / currentSpeed;
+                const directionY = this.ballVelocity.y / currentSpeed;
+                this.ballVelocity.x = directionX * this.baseBallSpeed;
+                this.ballVelocity.y = directionY * this.baseBallSpeed;
+            }
+        }
+    }
+
     private handleResize(): void {
         // Recalculate dimensions
         this.calculateResponsiveDimensions();
+        
+        // Adjust ball speed for new screen size
+        this.adjustSpeedForDevice();
         
         // Update canvas and container sizes
         if (this.app && this.app.renderer) {
