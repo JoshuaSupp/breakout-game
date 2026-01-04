@@ -17,6 +17,10 @@ const BASE_WIDTH = 800;
 const BASE_HEIGHT = 600;
 let SCALE_FACTOR = 1;
 
+// Paddle collision zone constants
+const PADDLE_SIDE_ZONE_WIDTH = 10; // Width of left/right side zones
+const PADDLE_TOP_ZONE_HEIGHT = 5; // Height of top zone for angled bounces
+
 interface Velocity {
     x: number;
     y: number;
@@ -150,7 +154,7 @@ export class BreakoutGame {
                 brick.drawRect(0, 0, BRICK_WIDTH, BRICK_HEIGHT);
                 brick.endFill();
                 brick.x = col * (BRICK_WIDTH + BRICK_PADDING) + BRICK_PADDING;
-                brick.y = row * (BRICK_HEIGHT + BRICK_PADDING) + 50;
+                brick.y = row * (BRICK_HEIGHT + BRICK_PADDING) + 5;
                 brick.visible = true;
                 this.bricks[row][col] = brick;
                 this.bricksContainer.addChild(brick);
@@ -262,10 +266,47 @@ export class BreakoutGame {
             this.ball.x >= this.paddle.x &&
             this.ball.x <= this.paddle.x + PADDLE_WIDTH) {
             
-            this.ballVelocity.y = -Math.abs(this.ballVelocity.y);
-            
-            const hitPos = (this.ball.x - this.paddle.x) / PADDLE_WIDTH;
-            this.ballVelocity.x = (hitPos - 0.5) * 6;
+            // Calculate ball center relative to paddle
+            const ballCenterX = this.ball.x;
+            const ballCenterY = this.ball.y;
+            const paddleLeft = this.paddle.x;
+            const paddleRight = this.paddle.x + PADDLE_WIDTH;
+            const paddleTop = this.paddle.y;
+            const paddleBottom = this.paddle.y + PADDLE_HEIGHT;
+            // Determine which part of paddle was hit
+            const hitTop = ballCenterY + BALL_RADIUS >= paddleTop && ballCenterY + BALL_RADIUS <= paddleTop + PADDLE_TOP_ZONE_HEIGHT;
+            const hitLeftSide = ballCenterX >= paddleLeft && ballCenterX <= paddleLeft + PADDLE_SIDE_ZONE_WIDTH;
+            const hitRightSide = ballCenterX >= paddleRight - PADDLE_SIDE_ZONE_WIDTH && ballCenterX <= paddleRight;
+            const hitBottom = ballCenterY - BALL_RADIUS <= paddleBottom && ballCenterY - BALL_RADIUS >= paddleBottom - PADDLE_TOP_ZONE_HEIGHT;
+            // Preserve current speed
+            const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
+            if (hitTop || hitBottom) {
+                this.ballVelocity.y = -Math.abs(this.ballVelocity.y);
+                const hitPos = (this.ball.x - this.paddle.x) / PADDLE_WIDTH;
+                this.ballVelocity.x = (hitPos - 0.5) * currentSpeed * 0.8;
+                const newSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
+                if (newSpeed > 0) {
+                    this.ballVelocity.x = (this.ballVelocity.x / newSpeed) * currentSpeed;
+                    this.ballVelocity.y = (this.ballVelocity.y / newSpeed) * currentSpeed;
+                }
+                this.showCollisionFeedback('top');
+            } else if (hitLeftSide && this.ballVelocity.x > 0) {
+                this.ballVelocity.x = -Math.abs(currentSpeed * 0.8);
+                this.ballVelocity.y = -Math.abs(this.ballVelocity.y) * 0.3; // Slight upward angle
+                this.showCollisionFeedback('left');
+            } else if (hitRightSide && this.ballVelocity.x < 0) {
+                // Right side of paddle - send ball right
+                this.ballVelocity.x = Math.abs(currentSpeed * 0.8);
+                this.ballVelocity.y = -Math.abs(this.ballVelocity.y) * 0.3; // Slight upward angle
+                this.showCollisionFeedback('right');
+            } 
+            // Ensure minimum speed
+            const finalSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
+            if (finalSpeed < this.baseBallSpeed * 0.6) {
+                const scale = (this.baseBallSpeed * 0.6) / finalSpeed;
+                this.ballVelocity.x *= scale;
+                this.ballVelocity.y *= scale;
+            }
         }
 
         // Ball-brick collision
@@ -291,6 +332,64 @@ export class BreakoutGame {
                 }
             }
         }
+    }
+
+    private showCollisionFeedback(zone: string): void {
+        // Set color based on zone (different colors for different effects)
+        let color = 0x00FF00; // Green for top
+        switch (zone) {
+            case 'left':
+                color = 0x0000FF; // Blue for left
+                break;
+            case 'right':
+                color = 0x0000FF; // Blue for right
+                break;
+            case 'bottom':
+                color = 0x00FF00; // Green for bottom
+                break;
+        }
+        
+        // Change paddle color immediately
+        this.paddle.clear();
+        this.paddle.beginFill(color);
+        this.paddle.drawRect(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT);
+        this.paddle.endFill();
+        
+        // Gradually fade back to white over multiple frames
+        let fadeStep = 0;
+        const totalFadeSteps = 15;
+        
+        const fadeToWhite = () => {
+            fadeStep++;
+            
+            if (fadeStep >= totalFadeSteps) {
+                // Final state: white
+                this.paddle.clear();
+                this.paddle.beginFill(0xFFFFFF);
+                this.paddle.drawRect(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT);
+                this.paddle.endFill();
+                return;
+            }
+            
+            // Calculate intermediate color (interpolating towards white)
+            const progress = fadeStep / totalFadeSteps;
+            const r = ((color >> 16) & 0xFF) + Math.floor((255 - ((color >> 16) & 0xFF)) * progress);
+            const g = ((color >> 8) & 0xFF) + Math.floor((255 - ((color >> 8) & 0xFF)) * progress);
+            const b = (color & 0xFF) + Math.floor((255 - (color & 0xFF)) * progress);
+            const newColor = (r << 16) | (g << 8) | b;
+            
+            // Apply the new color
+            this.paddle.clear();
+            this.paddle.beginFill(newColor);
+            this.paddle.drawRect(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT);
+            this.paddle.endFill();
+            
+            // Continue animation
+            requestAnimationFrame(fadeToWhite);
+        };
+        
+        // Start fade animation immediately
+        requestAnimationFrame(fadeToWhite);
     }
 
     private allBricksDestroyed(): boolean {
@@ -362,9 +461,11 @@ export class BreakoutGame {
     private updateUI(): void {
         const scoreElement = document.getElementById('score');
         const livesElement = document.getElementById('lives');
+        const usernameElement = document.getElementById('username');
         
         if (scoreElement) scoreElement.textContent = this.score.toString();
         if (livesElement) livesElement.textContent = this.lives.toString();
+        if (usernameElement) usernameElement.textContent = this.username;
     }
 
     private calculateResponsiveDimensions(): void {
@@ -396,7 +497,7 @@ export class BreakoutGame {
         if (window.innerWidth <= 768) {
             this.baseBallSpeed = 2.5; // Slower on mobile
         } else {
-            this.baseBallSpeed = 3; // Normal speed on desktop
+            this.baseBallSpeed = 8; // Normal speed on desktop
         }
         
         // Update current velocity if game is running
