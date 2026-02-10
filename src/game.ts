@@ -26,6 +26,13 @@ interface Velocity {
     y: number;
 }
 
+interface GameHistory {
+    date: Date;
+    score: number;
+    result: 'Win' | 'Loss';
+    difficulty: string;
+}
+
 type GameState = 'start' | 'playing' | 'gameOver' | 'won';
 
 export class BreakoutGame {
@@ -45,12 +52,40 @@ export class BreakoutGame {
     private username: string = '';
     private resizeHandler: () => void;
     
+    // Settings & History
+    public musicEnabled: boolean = true;
+    public soundEnabled: boolean = true;
+    public sessionHistory: GameHistory[] = [];
+    
     // Touch/Mobile properties
     private isDragging: boolean = false;
     private lastTouchX: number = 0;
     private baseBallSpeed: number = 3;
     private deltaTime: number = 1;
     private lastTime: number = 0;
+    
+    // Difficulty settings
+    private difficulty: 'easy' | 'medium' | 'hard' = 'medium';
+    private difficultySettings = {
+        easy: {
+            ballSpeed: 4.5,
+            brickRows: 6,
+            brickCols: 10,
+            paddleWidthMultiplier: 1.5
+        },
+        medium: {
+            ballSpeed: 5.5,
+            brickRows: 8,
+            brickCols: 10,
+            paddleWidthMultiplier: 1.0
+        },
+        hard: {
+            ballSpeed: 5.5,
+            brickRows: 10,
+            brickCols: 10,
+            paddleWidthMultiplier: 0.7
+        }
+    };
 
     constructor() {
         this.app = new PIXI.Application();
@@ -77,6 +112,33 @@ export class BreakoutGame {
         this.resizeHandler = this.handleResize.bind(this);
     }
 
+    private getCurrentPaddleWidth(): number {
+        const settings = this.difficultySettings[this.difficulty];
+        return PADDLE_WIDTH * settings.paddleWidthMultiplier;
+    }
+
+    setDifficulty(difficulty: 'easy' | 'medium' | 'hard'): void {
+        //console.log(`Setting difficulty to: ${difficulty}`);
+        this.difficulty = difficulty;
+        const settings = this.difficultySettings[difficulty];
+        this.baseBallSpeed = settings.ballSpeed;
+        
+        // Only update paddle if game is initialized (paddle exists)
+        if (this.paddle && this.paddle.clear) {
+            // Update paddle width based on difficulty
+            const newPaddleWidth = PADDLE_WIDTH * settings.paddleWidthMultiplier;
+            this.paddle.clear();
+            this.paddle.beginFill(0xFFFFFF);
+            this.paddle.drawRect(0, 0, newPaddleWidth, PADDLE_HEIGHT);
+            this.paddle.endFill();
+            
+            // Ensure paddle stays within bounds
+            if (this.paddle.x > GAME_WIDTH - newPaddleWidth) {
+                this.paddle.x = GAME_WIDTH - newPaddleWidth;
+            }
+        }
+    }
+
     async start(): Promise<void> {
         await this.app.init({ 
             width: GAME_WIDTH, 
@@ -95,6 +157,7 @@ export class BreakoutGame {
         
         const gameContainer = document.getElementById('gameContainer');
         if (gameContainer) {
+            gameContainer.innerHTML = '';
             gameContainer.appendChild(this.app.canvas);
             gameContainer.style.width = GAME_WIDTH + 'px';
             gameContainer.style.height = GAME_HEIGHT + 'px';
@@ -105,10 +168,6 @@ export class BreakoutGame {
         this.app.stage.addChild(this.bricksContainer);
         this.app.stage.addChild(this.gameObjectsContainer);
         this.setupUsernamePopup();
-        if (this.username) {
-            this.gameState = 'playing';
-            this.initializeGame();
-        }
         this.setupEventListeners();
         this.app.ticker.add(this.gameLoop.bind(this));
         
@@ -117,16 +176,20 @@ export class BreakoutGame {
     }
 
     private initializeGame(): void {
+        //console.log(`Initializing game with difficulty: ${this.difficulty}`);
         // Clear containers
         this.bricksContainer.removeChildren();
         this.gameObjectsContainer.removeChildren();
 
-        // Create paddle
+        // Create paddle with difficulty-based width
+        const settings = this.difficultySettings[this.difficulty];
+        const paddleWidth = PADDLE_WIDTH * settings.paddleWidthMultiplier;
+        console.log(`Creating paddle with difficulty: ${this.difficulty}, multiplier: ${settings.paddleWidthMultiplier}, width: ${paddleWidth}`);
         this.paddle.clear();
         this.paddle.beginFill(0xFFFFFF);
-        this.paddle.drawRect(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT);
+        this.paddle.drawRect(0, 0, paddleWidth, PADDLE_HEIGHT);
         this.paddle.endFill();
-        this.paddle.x = GAME_WIDTH / 2 - PADDLE_WIDTH / 2;
+        this.paddle.x = GAME_WIDTH / 2 - paddleWidth / 2;
         this.paddle.y = GAME_HEIGHT - 50;
         this.gameObjectsContainer.addChild(this.paddle);
 
@@ -145,12 +208,18 @@ export class BreakoutGame {
 
     private createBricks(): void {
         this.bricks = [];
+        const settings = this.difficultySettings[this.difficulty];
+        const rows = settings.brickRows;
+        const cols = settings.brickCols;
+        
+        // Color palette - use fewer colors for easy mode, more for hard mode
         const colors: number[] = [0xFF0000, 0xFF8000, 0xFFFF00, 0x00FF00, 0x0088FF, 0x0000FF, 0xb300b3, 0x620031];
-        for (let row = 0; row < BRICK_ROWS; row++) {
+        
+        for (let row = 0; row < rows; row++) {
             this.bricks[row] = [];
-            for (let col = 0; col < BRICK_COLS; col++) {
+            for (let col = 0; col < cols; col++) {
                 const brick = new PIXI.Graphics();
-                brick.beginFill(colors[row]);
+                brick.beginFill(colors[row % colors.length]);
                 brick.drawRect(0, 0, BRICK_WIDTH, BRICK_HEIGHT);
                 brick.endFill();
                 brick.x = col * (BRICK_WIDTH + BRICK_PADDING) + BRICK_PADDING;
@@ -196,7 +265,7 @@ export class BreakoutGame {
         document.addEventListener('keydown', (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft' && this.paddle.x > 0) {
                 this.paddle.x -= 20;
-            } else if (e.key === 'ArrowRight' && this.paddle.x < GAME_WIDTH - PADDLE_WIDTH) {
+            } else if (e.key === 'ArrowRight' && this.paddle.x < GAME_WIDTH - this.getCurrentPaddleWidth()) {
                 this.paddle.x += 20;
             } else if (e.key === ' ' && this.gameState !== 'playing') {
                 this.resetGame();
@@ -224,11 +293,12 @@ export class BreakoutGame {
     }
 
     private updatePaddle(): void {
-        this.paddle.x = this.mouseX - PADDLE_WIDTH / 2;
+        const currentPaddleWidth = this.getCurrentPaddleWidth();
+        this.paddle.x = this.mouseX - currentPaddleWidth / 2;
         
         if (this.paddle.x < 0) this.paddle.x = 0;
-        if (this.paddle.x > GAME_WIDTH - PADDLE_WIDTH) {
-            this.paddle.x = GAME_WIDTH - PADDLE_WIDTH;
+        if (this.paddle.x > GAME_WIDTH - currentPaddleWidth) {
+            this.paddle.x = GAME_WIDTH - currentPaddleWidth;
         }
     }
 
@@ -260,17 +330,20 @@ export class BreakoutGame {
     }
 
     private checkCollisions(): void {
+        // Get current paddle width based on difficulty
+        const currentPaddleWidth = this.getCurrentPaddleWidth();
+        
         // Ball-paddle collision
         if (this.ball.y + BALL_RADIUS >= this.paddle.y &&
             this.ball.y - BALL_RADIUS <= this.paddle.y + PADDLE_HEIGHT &&
             this.ball.x >= this.paddle.x &&
-            this.ball.x <= this.paddle.x + PADDLE_WIDTH) {
+            this.ball.x <= this.paddle.x + currentPaddleWidth) {
             
             // Calculate ball center relative to paddle
             const ballCenterX = this.ball.x;
             const ballCenterY = this.ball.y;
             const paddleLeft = this.paddle.x;
-            const paddleRight = this.paddle.x + PADDLE_WIDTH;
+            const paddleRight = this.paddle.x + currentPaddleWidth;
             const paddleTop = this.paddle.y;
             const paddleBottom = this.paddle.y + PADDLE_HEIGHT;
             // Determine which part of paddle was hit
@@ -282,7 +355,7 @@ export class BreakoutGame {
             const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
             if (hitTop || hitBottom) {
                 this.ballVelocity.y = -Math.abs(this.ballVelocity.y);
-                const hitPos = (this.ball.x - this.paddle.x) / PADDLE_WIDTH;
+                const hitPos = (this.ball.x - this.paddle.x) / currentPaddleWidth;
                 this.ballVelocity.x = (hitPos - 0.5) * currentSpeed * 0.8;
                 const newSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
                 if (newSpeed > 0) {
@@ -310,8 +383,12 @@ export class BreakoutGame {
         }
 
         // Ball-brick collision
-        for (let row = 0; row < BRICK_ROWS; row++) {
-            for (let col = 0; col < BRICK_COLS; col++) {
+        const settings = this.difficultySettings[this.difficulty];
+        const rows = settings.brickRows;
+        const cols = settings.brickCols;
+        
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
                 const brick = this.bricks[row][col];
                 if (!brick.visible) continue;
 
@@ -350,9 +427,10 @@ export class BreakoutGame {
         }
         
         // Change paddle color immediately
+        const currentPaddleWidth = this.getCurrentPaddleWidth();
         this.paddle.clear();
         this.paddle.beginFill(color);
-        this.paddle.drawRect(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT);
+        this.paddle.drawRect(0, 0, currentPaddleWidth, PADDLE_HEIGHT);
         this.paddle.endFill();
         
         // Gradually fade back to white over multiple frames
@@ -364,9 +442,10 @@ export class BreakoutGame {
             
             if (fadeStep >= totalFadeSteps) {
                 // Final state: white
+                const currentPaddleWidth = this.getCurrentPaddleWidth();
                 this.paddle.clear();
                 this.paddle.beginFill(0xFFFFFF);
-                this.paddle.drawRect(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT);
+                this.paddle.drawRect(0, 0, currentPaddleWidth, PADDLE_HEIGHT);
                 this.paddle.endFill();
                 return;
             }
@@ -379,9 +458,10 @@ export class BreakoutGame {
             const newColor = (r << 16) | (g << 8) | b;
             
             // Apply the new color
+            const currentPaddleWidth = this.getCurrentPaddleWidth();
             this.paddle.clear();
             this.paddle.beginFill(newColor);
-            this.paddle.drawRect(0, 0, PADDLE_WIDTH, PADDLE_HEIGHT);
+            this.paddle.drawRect(0, 0, currentPaddleWidth, PADDLE_HEIGHT);
             this.paddle.endFill();
             
             // Continue animation
@@ -431,11 +511,67 @@ export class BreakoutGame {
     }
 
     private showGameOver(): void {
+        this.addToHistory('Loss');
         this.showPopup('Game Over', 'Press OK to restart');
     }
 
     private showWin(): void {
+        this.addToHistory('Win');
         this.showPopup('You Win!', 'Press OK to play again');
+    }
+
+    private addToHistory(result: 'Win' | 'Loss'): void {
+        const historyItem: GameHistory = {
+            date: new Date(),
+            score: this.score,
+            result: result,
+            difficulty: this.difficulty
+        };
+        this.sessionHistory.unshift(historyItem); 
+        this.updateHistoryUI();
+    }
+
+    private updateHistoryUI(): void {
+        const listElement = document.getElementById('historyList');
+        if (!listElement) return;
+
+        listElement.innerHTML = '';
+        
+        if (this.sessionHistory.length === 0) {
+            listElement.innerHTML = '<li style="padding:10px; color:#888; text-align:center">No games played yet</li>';
+            return;
+        }
+
+        this.sessionHistory.forEach(game => {
+            const li = document.createElement('li');
+            li.className = `history-item ${game.result === 'Win' ? 'history-win' : 'history-loss'}`;
+            
+            const timeStr = game.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            li.innerHTML = `
+                <div>
+                    <div style="font-weight:bold; color:${game.result === 'Win' ? '#4caf50' : '#f44336'}">${game.result}</div>
+                    <div style="font-size:0.8em; color:#aaa">${game.difficulty}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-weight:bold">${game.score} pts</div>
+                    <div style="font-size:0.8em; color:#aaa">${timeStr}</div>
+                </div>
+            `;
+            listElement.appendChild(li);
+        });
+    }
+
+    public toggleMusic(enabled: boolean): void {
+        this.musicEnabled = enabled;
+        console.log(`Music ${enabled ? 'enabled' : 'disabled'}`);
+        // Implementation for music toggle would go here
+    }
+
+    public toggleSound(enabled: boolean): void {
+        this.soundEnabled = enabled;
+        console.log(`Sound ${enabled ? 'enabled' : 'disabled'}`);
+        // Implementation for sound toggle would go here
     }
 
     private resetGame(): void {
@@ -462,10 +598,12 @@ export class BreakoutGame {
         const scoreElement = document.getElementById('score');
         const livesElement = document.getElementById('lives');
         const usernameElement = document.getElementById('username');
+        const exitBtn = document.getElementById('exitBtn');
         
         if (scoreElement) scoreElement.textContent = this.score.toString();
         if (livesElement) livesElement.textContent = this.lives.toString();
         if (usernameElement) usernameElement.textContent = this.username;
+        if (exitBtn) exitBtn.style.display = this.gameState === 'playing' ? 'block' : 'none';
     }
 
     private calculateResponsiveDimensions(): void {
@@ -564,6 +702,13 @@ export class BreakoutGame {
             if (username) {
                 this.username = username;
                 sessionStorage.setItem('breakoutUsername', username);
+                // Get difficulty from dropdown
+                const difficultySelect = document.getElementById('difficultySelect') as HTMLSelectElement;
+                if (difficultySelect) {
+                    const selectedDifficulty = difficultySelect.value as 'easy' | 'medium' | 'hard';
+                    //console.log(`Setting difficulty from popup: ${selectedDifficulty}`);
+                    this.setDifficulty(selectedDifficulty);
+                }
                 usernamePopup.classList.remove('show');
                 this.gameState = 'playing';
                 this.initializeGame();
@@ -579,11 +724,7 @@ export class BreakoutGame {
     }
 }
 
-// Start the game
-window.addEventListener('load', async () => {
-    const game = new BreakoutGame();
-    await game.start();
-});
+
 
 
 declare global {
