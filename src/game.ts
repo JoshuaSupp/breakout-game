@@ -1,4 +1,8 @@
 import * as PIXI from 'pixi.js';
+import { SoundManager } from './sound';
+import { Spine } from '@esotericsoftware/spine-pixi-v8';
+import bgMorning from './assets/images/background/bg-morning.webp';
+import bgNight from './assets/images/background/bg-night.webp';
 
 // Responsive game constants (will be calculated based on screen size)
 let GAME_WIDTH = 800;
@@ -51,7 +55,13 @@ export class BreakoutGame {
     private winText: PIXI.Text | null = null;
     private username: string = '';
     private resizeHandler: () => void;
-    
+    private soundManager: SoundManager;// Background
+    private background: PIXI.Sprite | null = null;
+    public backgroundType: 'morning' | 'night' = 'morning';
+
+    // Animation
+    private spineAnim: Spine | null = null;
+
     // Settings & History
     public musicEnabled: boolean = true;
     public soundEnabled: boolean = true;
@@ -68,19 +78,19 @@ export class BreakoutGame {
     private difficulty: 'easy' | 'medium' | 'hard' = 'medium';
     private difficultySettings = {
         easy: {
-            ballSpeed: 4.5,
+            ballSpeed: 6.0,
             brickRows: 6,
             brickCols: 10,
             paddleWidthMultiplier: 1.5
         },
         medium: {
-            ballSpeed: 5.5,
+            ballSpeed: 8.0,
             brickRows: 8,
             brickCols: 10,
             paddleWidthMultiplier: 1.0
         },
         hard: {
-            ballSpeed: 5.5,
+            ballSpeed: 10.0,
             brickRows: 10,
             brickCols: 10,
             paddleWidthMultiplier: 0.7
@@ -91,7 +101,27 @@ export class BreakoutGame {
         this.app = new PIXI.Application();
         this.bricksContainer = new PIXI.Container();
         this.gameObjectsContainer = new PIXI.Container();
-
+        const savedMusic = localStorage.getItem('breakout_musicEnabled');
+        this.musicEnabled = savedMusic !== null ? savedMusic === 'true' : true; 
+        const savedSound = localStorage.getItem('breakout_soundEnabled');
+        this.soundEnabled = savedSound !== null ? savedSound === 'true' : true;
+        this.soundManager = new SoundManager();
+        this.soundManager.setMusicEnabled(this.musicEnabled);
+        this.soundManager.setSoundEnabled(this.soundEnabled);
+        const savedHistory = localStorage.getItem('breakout_history');
+        const savedBg = localStorage.getItem('breakout_background');
+        if (savedHistory) {
+            try {
+                this.sessionHistory = JSON.parse(savedHistory);
+                this.sessionHistory.forEach(h => h.date = new Date(h.date));
+            } catch (e) {
+                console.error('Failed to parse history', e);
+            }
+        }
+        if (savedBg === 'morning' || savedBg === 'night') {
+            this.backgroundType = savedBg;
+        }
+        this.updateHistoryUI();
         this.score = 0;
         this.lives = 3;
         this.gameState = 'start';
@@ -101,14 +131,8 @@ export class BreakoutGame {
         this.ball = new PIXI.Graphics();
         this.bricks = [];
         this.ballVelocity = { x: this.baseBallSpeed, y: -this.baseBallSpeed };
-        
-        // Calculate responsive dimensions
         this.calculateResponsiveDimensions();
-        
-        // Adjust ball speed for mobile devices
         this.adjustSpeedForDevice();
-        
-        // Bind resize handler
         this.resizeHandler = this.handleResize.bind(this);
     }
 
@@ -122,17 +146,12 @@ export class BreakoutGame {
         this.difficulty = difficulty;
         const settings = this.difficultySettings[difficulty];
         this.baseBallSpeed = settings.ballSpeed;
-        
-        // Only update paddle if game is initialized (paddle exists)
         if (this.paddle && this.paddle.clear) {
-            // Update paddle width based on difficulty
             const newPaddleWidth = PADDLE_WIDTH * settings.paddleWidthMultiplier;
             this.paddle.clear();
             this.paddle.beginFill(0xFFFFFF);
             this.paddle.drawRect(0, 0, newPaddleWidth, PADDLE_HEIGHT);
             this.paddle.endFill();
-            
-            // Ensure paddle stays within bounds
             if (this.paddle.x > GAME_WIDTH - newPaddleWidth) {
                 this.paddle.x = GAME_WIDTH - newPaddleWidth;
             }
@@ -149,12 +168,38 @@ export class BreakoutGame {
         });
         globalThis.__PIXI_APP__ = this.app;
         this.app.renderer.background.color = 0x0000;
-        
-        // Set canvas to be responsive
+        try {
+            await PIXI.Assets.load([bgMorning, bgNight]);
+            this.background = PIXI.Sprite.from(this.backgroundType === 'morning' ? bgMorning : bgNight);
+            this.background.anchor.set(0.5);
+            this.app.stage.addChild(this.background);
+            this.resizeBackground();
+        } catch (e) {
+            console.error('Failed to load background images', e);
+        }
+        // Load Spine Animation
+        try {
+            PIXI.Assets.add({
+                alias: 'halloweenCreature',
+                src: '/assets/HalloweenCreature/HalloweenCreature.skel'
+            });
+            const creatureAsset = await PIXI.Assets.load('halloweenCreature');
+            this.spineAnim = new Spine(creatureAsset.spineData);
+            
+            // Play first animation
+            if (this.spineAnim.skeleton.data.animations.length > 0) {
+                this.spineAnim.state.setAnimation(0, this.spineAnim.skeleton.data.animations[0].name, true);
+            }
+            
+            this.app.stage.addChild(this.spineAnim);
+            this.resizeSpine();
+        } catch (e) {
+            console.error('Failed to load spine animation', e);
+        }
+
         this.app.canvas.style.width = '100%';
         this.app.canvas.style.height = '100%';
         this.app.canvas.style.display = 'block';
-        
         const gameContainer = document.getElementById('gameContainer');
         if (gameContainer) {
             gameContainer.innerHTML = '';
@@ -164,14 +209,11 @@ export class BreakoutGame {
             gameContainer.style.maxWidth = '100vw';
             gameContainer.style.maxHeight = '100vh';
         }
-        
         this.app.stage.addChild(this.bricksContainer);
         this.app.stage.addChild(this.gameObjectsContainer);
         this.setupUsernamePopup();
         this.setupEventListeners();
         this.app.ticker.add(this.gameLoop.bind(this));
-        
-        // Add resize listener
         window.addEventListener('resize', this.resizeHandler);
     }
 
@@ -338,22 +380,16 @@ export class BreakoutGame {
             this.ball.y - BALL_RADIUS <= this.paddle.y + PADDLE_HEIGHT &&
             this.ball.x >= this.paddle.x &&
             this.ball.x <= this.paddle.x + currentPaddleWidth) {
-            
-            // Calculate ball center relative to paddle
+            this.soundManager.playPaddleHit();
             const ballCenterX = this.ball.x;
             const ballCenterY = this.ball.y;
             const paddleLeft = this.paddle.x;
             const paddleRight = this.paddle.x + currentPaddleWidth;
             const paddleTop = this.paddle.y;
             const paddleBottom = this.paddle.y + PADDLE_HEIGHT;
-            // Determine which part of paddle was hit
-            const hitTop = ballCenterY + BALL_RADIUS >= paddleTop && ballCenterY + BALL_RADIUS <= paddleTop + PADDLE_TOP_ZONE_HEIGHT;
-            const hitLeftSide = ballCenterX >= paddleLeft && ballCenterX <= paddleLeft + PADDLE_SIDE_ZONE_WIDTH;
-            const hitRightSide = ballCenterX >= paddleRight - PADDLE_SIDE_ZONE_WIDTH && ballCenterX <= paddleRight;
-            const hitBottom = ballCenterY - BALL_RADIUS <= paddleBottom && ballCenterY - BALL_RADIUS >= paddleBottom - PADDLE_TOP_ZONE_HEIGHT;
-            // Preserve current speed
-            const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
-            if (hitTop || hitBottom) {
+            if (this.ballVelocity.y > 0) {
+                this.ball.y = paddleTop - BALL_RADIUS - 0.1;
+                const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
                 this.ballVelocity.y = -Math.abs(this.ballVelocity.y);
                 const hitPos = (this.ball.x - this.paddle.x) / currentPaddleWidth;
                 this.ballVelocity.x = (hitPos - 0.5) * currentSpeed * 0.8;
@@ -363,20 +399,23 @@ export class BreakoutGame {
                     this.ballVelocity.y = (this.ballVelocity.y / newSpeed) * currentSpeed;
                 }
                 this.showCollisionFeedback('top');
-            } else if (hitLeftSide && this.ballVelocity.x > 0) {
-                this.ballVelocity.x = -Math.abs(currentSpeed * 0.8);
-                this.ballVelocity.y = -Math.abs(this.ballVelocity.y) * 0.3; // Slight upward angle
-                this.showCollisionFeedback('left');
-            } else if (hitRightSide && this.ballVelocity.x < 0) {
-                // Right side of paddle - send ball right
-                this.ballVelocity.x = Math.abs(currentSpeed * 0.8);
-                this.ballVelocity.y = -Math.abs(this.ballVelocity.y) * 0.3; // Slight upward angle
-                this.showCollisionFeedback('right');
+            } else {
+                const hitLeftSide = ballCenterX >= paddleLeft && ballCenterX <= paddleLeft + PADDLE_SIDE_ZONE_WIDTH;
+                const hitRightSide = ballCenterX >= paddleRight - PADDLE_SIDE_ZONE_WIDTH && ballCenterX <= paddleRight;
+                const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
+                if (hitLeftSide && this.ballVelocity.x > 0) {
+                    this.ballVelocity.x = -Math.abs(currentSpeed * 0.5); // Push left
+                    this.ballVelocity.y = -Math.abs(currentSpeed * 0.866); // Push up (sin(60))
+                    this.showCollisionFeedback('left');
+                } else if (hitRightSide && this.ballVelocity.x < 0) {
+                    this.ballVelocity.x = Math.abs(currentSpeed * 0.5); // Push right
+                    this.ballVelocity.y = -Math.abs(currentSpeed * 0.866); // Push up (sin(60))
+                    this.showCollisionFeedback('right');
+                }
             } 
-            // Ensure minimum speed
             const finalSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
-            if (finalSpeed < this.baseBallSpeed * 0.6) {
-                const scale = (this.baseBallSpeed * 0.6) / finalSpeed;
+            if (finalSpeed < this.baseBallSpeed) {
+                const scale = this.baseBallSpeed / finalSpeed;
                 this.ballVelocity.x *= scale;
                 this.ballVelocity.y *= scale;
             }
@@ -385,8 +424,7 @@ export class BreakoutGame {
         // Ball-brick collision
         const settings = this.difficultySettings[this.difficulty];
         const rows = settings.brickRows;
-        const cols = settings.brickCols;
-        
+        const cols = settings.brickCols;  
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const brick = this.bricks[row][col];
@@ -400,6 +438,7 @@ export class BreakoutGame {
                     brick.visible = false;
                     this.ballVelocity.y = -this.ballVelocity.y;
                     this.score += 10;
+                    this.soundManager.playBrickHit();
                     
                     if (this.allBricksDestroyed()) {
                         this.gameState = 'won';
@@ -426,22 +465,16 @@ export class BreakoutGame {
                 break;
         }
         
-        // Change paddle color immediately
         const currentPaddleWidth = this.getCurrentPaddleWidth();
         this.paddle.clear();
         this.paddle.beginFill(color);
         this.paddle.drawRect(0, 0, currentPaddleWidth, PADDLE_HEIGHT);
         this.paddle.endFill();
-        
-        // Gradually fade back to white over multiple frames
         let fadeStep = 0;
-        const totalFadeSteps = 15;
-        
+        const totalFadeSteps = 15;     
         const fadeToWhite = () => {
             fadeStep++;
-            
             if (fadeStep >= totalFadeSteps) {
-                // Final state: white
                 const currentPaddleWidth = this.getCurrentPaddleWidth();
                 this.paddle.clear();
                 this.paddle.beginFill(0xFFFFFF);
@@ -449,26 +482,18 @@ export class BreakoutGame {
                 this.paddle.endFill();
                 return;
             }
-            
-            // Calculate intermediate color (interpolating towards white)
             const progress = fadeStep / totalFadeSteps;
             const r = ((color >> 16) & 0xFF) + Math.floor((255 - ((color >> 16) & 0xFF)) * progress);
             const g = ((color >> 8) & 0xFF) + Math.floor((255 - ((color >> 8) & 0xFF)) * progress);
             const b = (color & 0xFF) + Math.floor((255 - (color & 0xFF)) * progress);
             const newColor = (r << 16) | (g << 8) | b;
-            
-            // Apply the new color
             const currentPaddleWidth = this.getCurrentPaddleWidth();
             this.paddle.clear();
             this.paddle.beginFill(newColor);
             this.paddle.drawRect(0, 0, currentPaddleWidth, PADDLE_HEIGHT);
             this.paddle.endFill();
-            
-            // Continue animation
             requestAnimationFrame(fadeToWhite);
         };
-        
-        // Start fade animation immediately
         requestAnimationFrame(fadeToWhite);
     }
 
@@ -495,14 +520,10 @@ export class BreakoutGame {
             popupTitle.textContent = title;
             popupMessage.textContent = message;
             popup.classList.add('show');
-    
-            // Remove previous listeners to avoid stacking
             const newBtn = popupOkBtn.cloneNode(true) as HTMLElement;
             popupOkBtn.parentNode?.replaceChild(newBtn, popupOkBtn);
-    
             newBtn.addEventListener('click', () => {
                 popup.classList.remove('show');
-                // Optionally, reset game if needed
                 if (this.gameState !== 'playing') {
                     this.resetGame();
                 }
@@ -527,7 +548,12 @@ export class BreakoutGame {
             result: result,
             difficulty: this.difficulty
         };
-        this.sessionHistory.unshift(historyItem); 
+        this.sessionHistory.unshift(historyItem);
+        // Limit to 20 items
+        if (this.sessionHistory.length > 20) {
+            this.sessionHistory.pop();
+        }
+        localStorage.setItem('breakout_history', JSON.stringify(this.sessionHistory));
         this.updateHistoryUI();
     }
 
@@ -564,14 +590,16 @@ export class BreakoutGame {
 
     public toggleMusic(enabled: boolean): void {
         this.musicEnabled = enabled;
+        this.soundManager.setMusicEnabled(enabled);
+        localStorage.setItem('breakout_musicEnabled', enabled.toString());
         console.log(`Music ${enabled ? 'enabled' : 'disabled'}`);
-        // Implementation for music toggle would go here
     }
 
     public toggleSound(enabled: boolean): void {
         this.soundEnabled = enabled;
+        this.soundManager.setSoundEnabled(enabled);
+        localStorage.setItem('breakout_soundEnabled', enabled.toString());
         console.log(`Sound ${enabled ? 'enabled' : 'disabled'}`);
-        // Implementation for sound toggle would go here
     }
 
     private resetGame(): void {
@@ -657,6 +685,12 @@ export class BreakoutGame {
         // Adjust ball speed for new screen size
         this.adjustSpeedForDevice();
         
+        // Update background
+        this.resizeBackground();
+
+        // Update spine
+        this.resizeSpine();
+        
         // Update canvas and container sizes
         if (this.app && this.app.renderer) {
             this.app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
@@ -702,6 +736,12 @@ export class BreakoutGame {
             if (username) {
                 this.username = username;
                 sessionStorage.setItem('breakoutUsername', username);
+                
+                // Start music on first user interaction
+                if (this.musicEnabled) {
+                    this.soundManager.playMusic();
+                }
+
                 // Get difficulty from dropdown
                 const difficultySelect = document.getElementById('difficultySelect') as HTMLSelectElement;
                 if (difficultySelect) {
@@ -721,6 +761,42 @@ export class BreakoutGame {
                 startGameBtn.click();
             }
         });
+    }
+
+    public setBackground(type: 'morning' | 'night'): void {
+        this.backgroundType = type;
+        if (this.background) {
+            this.background.texture = PIXI.Texture.from(type === 'morning' ? bgMorning : bgNight);
+            this.resizeBackground();
+        }
+        localStorage.setItem('breakout_background', type);
+    }
+
+    private resizeBackground(): void {
+        if (!this.background) return;
+        this.background.x = GAME_WIDTH / 2;
+        this.background.y = GAME_HEIGHT / 2;
+        const scaleX = GAME_WIDTH / this.background.texture.width;
+        const scaleY = GAME_HEIGHT / this.background.texture.height;
+        const scale = Math.max(scaleX, scaleY); 
+        this.background.scale.set(scale);
+    }
+
+    private resizeSpine(): void {
+        if (!this.spineAnim) return;
+
+        // Position at top right, left of the menu button
+        this.spineAnim.x = GAME_WIDTH - 60;
+        this.spineAnim.y = 25;
+
+        // Scale to reasonable size (e.g. 50px height)
+        const targetHeight = 50;
+        // Default height from atlas was ~269. Use bounds or fixed scale.
+        // If not loaded yet, bounds might be 0.
+        // But resizeSpine is called after load.
+        // Safe fallback: 0.2
+        const scale = 0.2; 
+        this.spineAnim.scale.set(scale);
     }
 }
 

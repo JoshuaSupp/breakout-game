@@ -20,13 +20,17 @@
   "license": "ISC",
   "description": "A compressed PixiJS Breakout game build",
   "devDependencies": {
+    "@types/howler": "^2.2.12",
     "@types/node": "^24.5.2",
     "@types/pixi.js": "^4.8.9",
     "serve": "^14.2.4",
+    "sharp": "^0.34.5",
     "typescript": "^5.9.2",
     "vite": "^7.3.1"
   },
   "dependencies": {
+    "@esotericsoftware/spine-pixi-v8": "^4.2.101",
+    "howler": "^2.2.4",
     "pixi.js": "^8.13.2"
   },
   "browserslist": [

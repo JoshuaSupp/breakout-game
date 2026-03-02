@@ -269,6 +269,13 @@
                     <span class="slider"></span>
                 </label>
             </div>
+            <div class="setting-row">
+                <span>Night Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="bgToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
         
         <div class="menu-section">
@@ -302,6 +309,18 @@
             <h2 id="popupTitle"></h2>
             <p id="popupMessage"></p>
             <button id="popupOkBtn">OK</button>
+        </div>
+    </div>
+
+    <!-- Exit Confirmation Popup -->
+    <div id="exitConfirmPopup" class="popup">
+        <div class="popup-content">
+            <h2>Exit Game?</h2>
+            <p>Are you sure you want to exit? Your progress will be lost.</p>
+            <div class="popup-buttons">
+                <button id="exitConfirmYesBtn" class="confirm-btn yes-btn">Yes, Exit</button>
+                <button id="exitConfirmNoBtn" class="confirm-btn no-btn">Cancel</button>
+            </div>
         </div>
     </div>
     <script type="module">
@@ -353,41 +372,52 @@
             });
         }
         const exitBtn = document.getElementById('exitBtn');
-        console.log('Exit button element found:', !!exitBtn);
-        if (exitBtn) {
+        const exitConfirmPopup = document.getElementById('exitConfirmPopup');
+        const exitConfirmYesBtn = document.getElementById('exitConfirmYesBtn');
+        const exitConfirmNoBtn = document.getElementById('exitConfirmNoBtn');
+
+        if (exitBtn && exitConfirmPopup && exitConfirmYesBtn && exitConfirmNoBtn) {
             exitBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Exit button clicked');
-                if (confirm('Are you sure you want to exit the game?')) {
-                    console.log('Exit confirmed');
-                    if (game.app && game.app.ticker) {
-                        game.app.ticker.stop();
-                    }
-                    
-                    // Reset game state
-                    game.gameState = 'start';
-                    game.score = 0;
-                    game.lives = 3;
-                    
-                    // Show the username popup again
-                    const usernamePopup = document.getElementById('usernamePopup');
-                    if (usernamePopup) {
-                        usernamePopup.classList.remove('hide');
-                        usernamePopup.classList.add('show');
-                    }
-                    
-                    // Reset the game
-                    game.resetGame();
-                    
-                    // Force state back to start
-                    game.gameState = 'start';
-                    
-                    // Update UI to hide exit button
-                    game.updateUI();
-                }
+                exitConfirmPopup.classList.add('show');
             });
-        } else {
+
+            // Handle Yes click
+            exitConfirmYesBtn.addEventListener('click', () => {
+                exitConfirmPopup.classList.remove('show');
+                
+                if (game.app && game.app.ticker) {
+                    game.app.ticker.stop();
+                }
+                
+                // Reset game state
+                game.gameState = 'start';
+                game.score = 0;
+                game.lives = 3;
+                
+                // Show the username popup again
+                const usernamePopup = document.getElementById('usernamePopup');
+                if (usernamePopup) {
+                    usernamePopup.classList.remove('hide');
+                    usernamePopup.classList.add('show');
+                }
+                
+                // Reset the game
+                game.resetGame();
+                
+                // Force state back to start
+                game.gameState = 'start';
+                
+                // Update UI to hide exit button
+                game.updateUI();
+            });
+
+            // Handle No click
+            exitConfirmNoBtn.addEventListener('click', () => {
+                exitConfirmPopup.classList.remove('show');
+            });
+        } else if (!exitBtn) {
             console.error('CRITICAL: Exit button not found in DOM');
         }
 
@@ -414,14 +444,24 @@
         }
 
         if (musicToggle) {
+            musicToggle.checked = game.musicEnabled; 
             musicToggle.addEventListener('change', (e) => {
                 game.toggleMusic(e.target.checked);
             });
         }
 
         if (soundToggle) {
+            soundToggle.checked = game.soundEnabled;
             soundToggle.addEventListener('change', (e) => {
                 game.toggleSound(e.target.checked);
+            });
+        }
+
+        const bgToggle = document.getElementById('bgToggle');
+        if (bgToggle) {
+            bgToggle.checked = game.backgroundType === 'night';
+            bgToggle.addEventListener('change', (e) => {
+                game.setBackground(e.target.checked ? 'night' : 'morning');
             });
         }
         
@@ -658,6 +698,49 @@
     .difficulty-select option[value="hard"] {
         background: #f8d7da;
         color: #721c24;
+    }
+
+    /* Confirmation Popup Buttons */
+    .popup-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 1.5em;
+    }
+
+    .confirm-btn {
+        padding: 0.8em 2em;
+        font-size: 1em;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: transform 0.2s, box-shadow 0.2s;
+        color: white;
+    }
+
+    .confirm-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .confirm-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .yes-btn {
+        background-color: #dc3545;
+    }
+    .yes-btn:hover {
+        background-color: #c82333;
+    }
+
+    .no-btn {
+        background-color: #6c757d;
+    }
+    .no-btn:hover {
+        background-color: #5a6268;
     }
 </style>
 </html>
