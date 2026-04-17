@@ -34,10 +34,10 @@ interface GameHistory {
     date: Date;
     score: number;
     result: 'Win' | 'Loss';
-    difficulty: string;
+    level: number;
 }
 
-type GameState = 'start' | 'playing' | 'gameOver' | 'won';
+type GameState = 'start' | 'playing' | 'gameOver' | 'won' | 'levelIntro';
 
 export class BreakoutGame {
     private app: PIXI.Application;
@@ -61,6 +61,8 @@ export class BreakoutGame {
 
     // Animation
     private spineAnim: Spine | null = null;
+    private logoApp: PIXI.Application | null = null;
+    private logoSpine: Spine | null = null;
 
     // Settings & History
     public musicEnabled: boolean = true;
@@ -74,28 +76,10 @@ export class BreakoutGame {
     private deltaTime: number = 1;
     private lastTime: number = 0;
     
-    // Difficulty settings
-    private difficulty: 'easy' | 'medium' | 'hard' = 'medium';
-    private difficultySettings = {
-        easy: {
-            ballSpeed: 6.0,
-            brickRows: 6,
-            brickCols: 10,
-            paddleWidthMultiplier: 1.5
-        },
-        medium: {
-            ballSpeed: 8.0,
-            brickRows: 8,
-            brickCols: 10,
-            paddleWidthMultiplier: 1.0
-        },
-        hard: {
-            ballSpeed: 10.0,
-            brickRows: 10,
-            brickCols: 10,
-            paddleWidthMultiplier: 0.7
-        }
-    };
+    // Level settings
+    private currentLevel: number = 1;
+    private highestLevelUnlocked: number = 1;
+    private readonly MAX_LEVELS: number = 30;
 
     constructor() {
         this.app = new PIXI.Application();
@@ -110,6 +94,21 @@ export class BreakoutGame {
         this.soundManager.setSoundEnabled(this.soundEnabled);
         const savedHistory = localStorage.getItem('breakout_history');
         const savedBg = localStorage.getItem('breakout_background');
+        const savedLevel = localStorage.getItem('breakout_highestLevel');
+        
+        if (savedLevel) {
+            this.highestLevelUnlocked = parseInt(savedLevel, 10);
+            this.currentLevel = this.highestLevelUnlocked;
+        }
+
+        const lastPlayedLevel = localStorage.getItem('breakout_lastPlayedLevel');
+        if (lastPlayedLevel) {
+            const level = parseInt(lastPlayedLevel, 10);
+            if (level <= this.highestLevelUnlocked) {
+                this.currentLevel = level;
+            }
+        }
+
         if (savedHistory) {
             try {
                 this.sessionHistory = JSON.parse(savedHistory);
@@ -132,29 +131,75 @@ export class BreakoutGame {
         this.bricks = [];
         this.ballVelocity = { x: this.baseBallSpeed, y: -this.baseBallSpeed };
         this.calculateResponsiveDimensions();
-        this.adjustSpeedForDevice();
+        this.adjustSpeedForLevel(true);
         this.resizeHandler = this.handleResize.bind(this);
+        this.setupLevelStartPopup();
     }
 
     private getCurrentPaddleWidth(): number {
-        const settings = this.difficultySettings[this.difficulty];
-        return PADDLE_WIDTH * settings.paddleWidthMultiplier;
+        // Decrease paddle width slightly as level increases
+        // Level 1: Multiplier 1.2
+        // Level 30: Multiplier 0.7
+        const multiplier = Math.max(0.7, 1.2 - ((this.currentLevel - 1) * 0.02));
+        return PADDLE_WIDTH * multiplier;
     }
 
-    setDifficulty(difficulty: 'easy' | 'medium' | 'hard'): void {
-        //console.log(`Setting difficulty to: ${difficulty}`);
-        this.difficulty = difficulty;
-        const settings = this.difficultySettings[difficulty];
-        this.baseBallSpeed = settings.ballSpeed;
-        if (this.paddle && this.paddle.clear) {
-            const newPaddleWidth = PADDLE_WIDTH * settings.paddleWidthMultiplier;
-            this.paddle.clear();
-            this.paddle.beginFill(0xFFFFFF);
-            this.paddle.drawRect(0, 0, newPaddleWidth, PADDLE_HEIGHT);
-            this.paddle.endFill();
-            if (this.paddle.x > GAME_WIDTH - newPaddleWidth) {
-                this.paddle.x = GAME_WIDTH - newPaddleWidth;
-            }
+    public openLevelSelect(): void {
+        this.gameState = 'levelIntro';
+        const levelSelectScreen = document.getElementById('levelSelectScreen');
+        const sideMenu = document.getElementById('sideMenu');
+        
+        if (levelSelectScreen) {
+            levelSelectScreen.classList.add('show');
+            this.updateLevelGrid();
+        }
+        
+        if (sideMenu) {
+            sideMenu.classList.remove('open');
+        }
+    }
+
+    public closeLevelSelect(): void {
+        const levelSelectScreen = document.getElementById('levelSelectScreen');
+        if (levelSelectScreen) {
+            levelSelectScreen.classList.remove('show');
+        }
+        
+        if (this.gameState === 'levelIntro') {
+            this.showLevelStartPopup(true);
+        }
+    }
+
+    private setupLevelStartPopup(): void {
+        const levelStartPopup = document.getElementById('levelStartPopup');
+        const playBtn = document.getElementById('levelStartPlayBtn');
+        const selectBtn = document.getElementById('levelStartSelectBtn');
+
+        if (playBtn && levelStartPopup) {
+            playBtn.addEventListener('click', () => {
+                levelStartPopup.classList.remove('show');
+                this.gameState = 'playing';
+            });
+        }
+
+        if (selectBtn && levelStartPopup) {
+            selectBtn.addEventListener('click', () => {
+                levelStartPopup.classList.remove('show');
+                this.openLevelSelect();
+            });
+        }
+    }
+
+    private showLevelStartPopup(resume: boolean = false): void {
+        this.gameState = 'levelIntro';
+        const levelStartPopup = document.getElementById('levelStartPopup');
+        const title = document.getElementById('levelStartTitle');
+        const playBtn = document.getElementById('levelStartPlayBtn');
+        
+        if (levelStartPopup && title && playBtn) {
+            title.textContent = `Level ${this.currentLevel}`;
+            playBtn.textContent = resume ? 'Resume Game' : 'Start Game';
+            levelStartPopup.classList.add('show');
         }
     }
 
@@ -196,6 +241,7 @@ export class BreakoutGame {
         } catch (e) {
             console.error('Failed to load spine animation', e);
         }
+        await this.setupSpineLogo();
 
         this.app.canvas.style.width = '100%';
         this.app.canvas.style.height = '100%';
@@ -215,18 +261,34 @@ export class BreakoutGame {
         this.setupEventListeners();
         this.app.ticker.add(this.gameLoop.bind(this));
         window.addEventListener('resize', this.resizeHandler);
+        this.updateLevelGrid();
+    }
+
+    private levelComplete(): void {
+        this.currentLevel++;
+        localStorage.setItem('breakout_lastPlayedLevel', this.currentLevel.toString()); 
+        if (this.currentLevel > this.highestLevelUnlocked) {
+            this.highestLevelUnlocked = this.currentLevel;
+            localStorage.setItem('breakout_highestLevel', this.highestLevelUnlocked.toString());
+        }
+        
+        if (this.currentLevel > this.MAX_LEVELS) {
+            this.gameState = 'won';
+            this.showWin();
+        } else {
+            this.initializeGame();
+            this.showLevelStartPopup();
+        }
     }
 
     private initializeGame(): void {
-        //console.log(`Initializing game with difficulty: ${this.difficulty}`);
+        this.updateLevelGrid();
         // Clear containers
         this.bricksContainer.removeChildren();
         this.gameObjectsContainer.removeChildren();
 
-        // Create paddle with difficulty-based width
-        const settings = this.difficultySettings[this.difficulty];
-        const paddleWidth = PADDLE_WIDTH * settings.paddleWidthMultiplier;
-        console.log(`Creating paddle with difficulty: ${this.difficulty}, multiplier: ${settings.paddleWidthMultiplier}, width: ${paddleWidth}`);
+        // Create paddle
+        const paddleWidth = this.getCurrentPaddleWidth();
         this.paddle.clear();
         this.paddle.beginFill(0xFFFFFF);
         this.paddle.drawRect(0, 0, paddleWidth, PADDLE_HEIGHT);
@@ -243,29 +305,57 @@ export class BreakoutGame {
         this.ball.x = GAME_WIDTH / 2;
         this.ball.y = GAME_HEIGHT / 2;
         this.gameObjectsContainer.addChild(this.ball);
+        
+        // Adjust speed for level
+        this.adjustSpeedForLevel(true);
 
         // Create bricks
         this.createBricks();
+        
+        // Update Level UI
+        const levelElement = document.getElementById('level');
+        if (levelElement) levelElement.textContent = this.currentLevel.toString();
+    }
+    
+    private adjustSpeedForLevel(reset: boolean = false): void {
+        // Base speed 6, max 12
+        // Increase by 0.2 per level
+        let speed = 6 + (this.currentLevel - 1) * 0.2;
+        if (window.innerWidth <= 768) {
+            speed *= 0.6; // Mobile scaling
+        }
+        this.baseBallSpeed = speed;
+        
+        if (reset) {
+            this.ballVelocity = { x: this.baseBallSpeed, y: -this.baseBallSpeed };
+        } else if (this.ballVelocity) {
+            const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
+            if (currentSpeed > 0) {
+                const directionX = this.ballVelocity.x / currentSpeed;
+                const directionY = this.ballVelocity.y / currentSpeed;
+                this.ballVelocity.x = directionX * this.baseBallSpeed;
+                this.ballVelocity.y = directionY * this.baseBallSpeed;
+            }
+        }
     }
 
     private createBricks(): void {
         this.bricks = [];
-        const settings = this.difficultySettings[this.difficulty];
-        const rows = settings.brickRows;
-        const cols = settings.brickCols;
+        const rows = Math.min(2 + Math.floor((this.currentLevel - 1) / 2), 14);
+        const cols = BRICK_COLS;
         
-        // Color palette - use fewer colors for easy mode, more for hard mode
         const colors: number[] = [0xFF0000, 0xFF8000, 0xFFFF00, 0x00FF00, 0x0088FF, 0x0000FF, 0xb300b3, 0x620031];
         
         for (let row = 0; row < rows; row++) {
             this.bricks[row] = [];
             for (let col = 0; col < cols; col++) {
                 const brick = new PIXI.Graphics();
-                brick.beginFill(colors[row % colors.length]);
+                const colorIndex = (row + Math.floor((this.currentLevel - 1) / 3)) % colors.length;
+                brick.beginFill(colors[colorIndex]);
                 brick.drawRect(0, 0, BRICK_WIDTH, BRICK_HEIGHT);
                 brick.endFill();
                 brick.x = col * (BRICK_WIDTH + BRICK_PADDING) + BRICK_PADDING;
-                brick.y = row * (BRICK_HEIGHT + BRICK_PADDING) + 5;
+                brick.y = row * (BRICK_HEIGHT + BRICK_PADDING) + 50;
                 brick.visible = true;
                 this.bricks[row][col] = brick;
                 this.bricksContainer.addChild(brick);
@@ -317,6 +407,7 @@ export class BreakoutGame {
 
     private gameLoop(): void {
         if (this.gameState === 'start') return;
+        if (this.gameState === 'levelIntro') return;
         if (this.gameState !== 'playing') return;
 
         // Calculate delta time for consistent speed across devices
@@ -422,9 +513,8 @@ export class BreakoutGame {
         }
 
         // Ball-brick collision
-        const settings = this.difficultySettings[this.difficulty];
-        const rows = settings.brickRows;
-        const cols = settings.brickCols;  
+        const rows = this.bricks.length;
+        const cols = this.bricks[0]?.length || 0;
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const brick = this.bricks[row][col];
@@ -441,8 +531,7 @@ export class BreakoutGame {
                     this.soundManager.playBrickHit();
                     
                     if (this.allBricksDestroyed()) {
-                        this.gameState = 'won';
-                        this.showWin();
+                        this.levelComplete();
                     }
                     return;
                 }
@@ -546,7 +635,7 @@ export class BreakoutGame {
             date: new Date(),
             score: this.score,
             result: result,
-            difficulty: this.difficulty
+            level: this.currentLevel
         };
         this.sessionHistory.unshift(historyItem);
         // Limit to 20 items
@@ -572,12 +661,12 @@ export class BreakoutGame {
             const li = document.createElement('li');
             li.className = `history-item ${game.result === 'Win' ? 'history-win' : 'history-loss'}`;
             
-            const timeStr = game.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = new Date(game.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
             li.innerHTML = `
                 <div>
                     <div style="font-weight:bold; color:${game.result === 'Win' ? '#4caf50' : '#f44336'}">${game.result}</div>
-                    <div style="font-size:0.8em; color:#aaa">${game.difficulty}</div>
+                    <div style="font-size:0.8em; color:#aaa">Level ${game.level || '?'}</div>
                 </div>
                 <div style="text-align:right">
                     <div style="font-weight:bold">${game.score} pts</div>
@@ -586,6 +675,58 @@ export class BreakoutGame {
             `;
             listElement.appendChild(li);
         });
+    }
+
+    public updateLevelGrid(): void {
+        const levelGrid = document.getElementById('levelGrid');
+        if (!levelGrid) return;
+
+        levelGrid.innerHTML = '';
+
+        for (let i = 1; i <= this.MAX_LEVELS; i++) {
+            const levelItem = document.createElement('div');
+            levelItem.className = 'level-item';
+
+            if (i <= this.highestLevelUnlocked) {
+                levelItem.classList.add('level-unlocked');
+                levelItem.addEventListener('click', () => {
+                    this.startLevel(i);
+                });
+
+                if (i === this.currentLevel) {
+                    levelItem.classList.add('level-current');
+                    levelItem.innerHTML = `<span>${i}</span><span class="level-icon">▶</span>`;
+                } else if (i < this.highestLevelUnlocked) {
+                    levelItem.classList.add('level-completed');
+                    levelItem.innerHTML = `<span>${i}</span><span class="level-icon">★</span>`;
+                } else {
+                    levelItem.textContent = i.toString();
+                }
+            } else {
+                levelItem.classList.add('level-locked');
+                levelItem.innerHTML = `<span>${i}</span><span class="level-icon">🔒</span>`;
+            }
+
+            levelGrid.appendChild(levelItem);
+        }
+    }
+
+    public startLevel(level: number): void {
+        if (level > this.highestLevelUnlocked) return;
+        
+        this.currentLevel = level;
+        localStorage.setItem('breakout_lastPlayedLevel', level.toString());
+        this.score = 0;
+        this.lives = 3;
+        
+        // Hide level select screen
+        const levelSelectScreen = document.getElementById('levelSelectScreen');
+        if (levelSelectScreen) {
+            levelSelectScreen.classList.remove('show');
+        }
+        
+        this.initializeGame();
+        this.showLevelStartPopup();
     }
 
     public toggleMusic(enabled: boolean): void {
@@ -614,12 +755,13 @@ export class BreakoutGame {
 
         this.score = 0;
         this.lives = 3;
+        if (this.gameState === 'won') {
+            this.currentLevel = 1;
+        }
         this.gameState = 'playing';
         this.resetBall();
 
-        this.bricks.forEach(row => 
-            row.forEach(brick => brick.visible = true)
-        );
+        this.initializeGame();
     }
 
     private updateUI(): void {
@@ -627,11 +769,13 @@ export class BreakoutGame {
         const livesElement = document.getElementById('lives');
         const usernameElement = document.getElementById('username');
         const exitBtn = document.getElementById('exitBtn');
+        const levelElement = document.getElementById('level');
         
         if (scoreElement) scoreElement.textContent = this.score.toString();
         if (livesElement) livesElement.textContent = this.lives.toString();
         if (usernameElement) usernameElement.textContent = this.username;
         if (exitBtn) exitBtn.style.display = this.gameState === 'playing' ? 'block' : 'none';
+        if (levelElement) levelElement.textContent = this.currentLevel.toString();
     }
 
     private calculateResponsiveDimensions(): void {
@@ -658,32 +802,12 @@ export class BreakoutGame {
         this.mouseX = GAME_WIDTH / 2;
     }
 
-    private adjustSpeedForDevice(): void {
-        // Reduce ball speed on mobile devices for better playability
-        if (window.innerWidth <= 768) {
-            this.baseBallSpeed = 2.5; // Slower on mobile
-        } else {
-            this.baseBallSpeed = 8; // Normal speed on desktop
-        }
-        
-        // Update current velocity if game is running
-        if (this.ballVelocity) {
-            const currentSpeed = Math.sqrt(this.ballVelocity.x ** 2 + this.ballVelocity.y ** 2);
-            if (currentSpeed > 0) {
-                const directionX = this.ballVelocity.x / currentSpeed;
-                const directionY = this.ballVelocity.y / currentSpeed;
-                this.ballVelocity.x = directionX * this.baseBallSpeed;
-                this.ballVelocity.y = directionY * this.baseBallSpeed;
-            }
-        }
-    }
-
     private handleResize(): void {
         // Recalculate dimensions
         this.calculateResponsiveDimensions();
         
         // Adjust ball speed for new screen size
-        this.adjustSpeedForDevice();
+        this.adjustSpeedForLevel(false);
         
         // Update background
         this.resizeBackground();
@@ -711,7 +835,11 @@ export class BreakoutGame {
     public destroy(): void {
         // Clean up resize listener
         window.removeEventListener('resize', this.resizeHandler);
-        
+        if (this.logoApp) {
+            this.logoApp.destroy(true);
+            this.logoApp = null;
+        }
+
         // Destroy PIXI app
         if (this.app) {
             this.app.destroy(true);
@@ -742,16 +870,11 @@ export class BreakoutGame {
                     this.soundManager.playMusic();
                 }
 
-                // Get difficulty from dropdown
-                const difficultySelect = document.getElementById('difficultySelect') as HTMLSelectElement;
-                if (difficultySelect) {
-                    const selectedDifficulty = difficultySelect.value as 'easy' | 'medium' | 'hard';
-                    //console.log(`Setting difficulty from popup: ${selectedDifficulty}`);
-                    this.setDifficulty(selectedDifficulty);
-                }
                 usernamePopup.classList.remove('show');
-                this.gameState = 'playing';
+                // Use stored level instead of forcing 1
+                // this.currentLevel = 1; 
                 this.initializeGame();
+                this.showLevelStartPopup();
             } else {
                 alert('Please enter a username!');
             }
@@ -780,6 +903,42 @@ export class BreakoutGame {
         const scaleY = GAME_HEIGHT / this.background.texture.height;
         const scale = Math.max(scaleX, scaleY); 
         this.background.scale.set(scale);
+    }
+
+    private async setupSpineLogo(): Promise<void> {
+        const container = document.getElementById('spineLogoContainer');
+        if (!container) return;
+
+        try {
+            this.logoApp = new PIXI.Application();
+            await this.logoApp.init({
+                width: 50,
+                height: 50,
+                antialias: true,
+                resolution: window.devicePixelRatio || 1,
+                autoDensity: true,
+            });
+            this.logoApp.renderer.background.alpha = 0;
+            this.logoApp.canvas.style.width = '50px';
+            this.logoApp.canvas.style.height = '50px';
+            this.logoApp.canvas.style.pointerEvents = 'none';
+            this.logoApp.canvas.style.background = 'transparent';
+            container.appendChild(this.logoApp.canvas);
+
+            const creatureAsset = await PIXI.Assets.load('halloweenCreature');
+            this.logoSpine = new Spine(creatureAsset.spineData);
+
+            if (this.logoSpine.skeleton.data.animations.length > 0) {
+                this.logoSpine.state.setAnimation(0, this.logoSpine.skeleton.data.animations[0].name, true);
+            }
+
+            this.logoSpine.x = 25;
+            this.logoSpine.y = 45;
+            this.logoSpine.scale.set(0.1);
+            this.logoApp.stage.addChild(this.logoSpine);
+        } catch (e) {
+            console.error('Failed to setup spine logo', e);
+        }
     }
 
     private resizeSpine(): void {

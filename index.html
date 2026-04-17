@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&display=swap" rel="stylesheet">
     <title>Breakout Game</title>
     <!-- Poki SDK -->
     <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
@@ -19,7 +21,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: Arial, sans-serif;
+            font-family: 'Exo 2', Arial, sans-serif;
             overflow: hidden;
         }
         
@@ -148,6 +150,226 @@
             transform: translateX(26px);
         }
 
+        /* Menu Button */
+        .menu-btn {
+            background-color: #1099bb;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .menu-btn:hover {
+            background-color: #0d7a9a;
+        }
+        
+    /* Level Select Screen */
+    .level-screen-content {
+        max-width: 620px !important;
+        width: 92% !important;
+        max-height: 85vh;
+        overflow-y: auto;
+        position: relative;
+        background: linear-gradient(145deg, #0d1117 0%, #161b22 60%, #0d1117 100%) !important;
+        border: 1px solid rgba(0, 212, 255, 0.3) !important;
+        box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
+    }
+
+    .level-screen-content h2 {
+        font-family: 'Exo 2', Arial, sans-serif;
+        font-weight: 900;
+        font-size: 1.8em;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        background: linear-gradient(90deg, #00d4ff, #a855f7, #00d4ff);
+        background-size: 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 3s linear infinite;
+        margin: 0.3em 0 0.2em;
+    }
+
+    @keyframes shimmer {
+        0%   { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+    }
+
+    .close-icon {
+        position: absolute;
+        top: 12px;
+        right: 15px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        font-size: 1.3em;
+        cursor: pointer;
+        color: #666;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .close-icon:hover {
+        background: rgba(244, 67, 54, 0.15);
+        border-color: #f44336;
+        color: #f44336;
+    }
+
+    #levelGrid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        padding: 10px 20px 20px;
+        margin-bottom: 10px;
+    }
+    
+    /* Level Start Popup */
+    .level-start-content {
+        max-width: 420px;
+        text-align: center;
+        background: linear-gradient(145deg, #0d1117 0%, #161b22 100%) !important;
+        border: 1px solid rgba(0, 212, 255, 0.3) !important;
+        box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
+    }
+
+    .level-start-content h2 {
+        font-family: 'Exo 2', Arial, sans-serif;
+        font-size: 3em;
+        font-weight: 900;
+        margin-bottom: 0.1em;
+        color: #00d4ff;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        animation: levelGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes levelGlow {
+        from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.2); }
+        to   { text-shadow: 0 0 25px rgba(0, 212, 255, 1),   0 0 50px rgba(0, 212, 255, 0.5), 0 0 80px rgba(0, 212, 255, 0.2); }
+    }
+
+    .level-start-content p {
+        font-family: 'Exo 2', Arial, sans-serif;
+        font-size: 0.9em;
+        font-weight: 600;
+        color: #8892a4;
+        margin-bottom: 1.8em;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+    }
+
+    .popup-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .confirm-btn {
+        padding: 0.75em 1.8em;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: 'Exo 2', Arial, sans-serif;
+        font-size: 0.9em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.2s ease;
+        color: white;
+    }
+
+    .confirm-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+    .yes-btn {
+        background: linear-gradient(135deg, #00b894, #00d4ff);
+        box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+    }
+
+    .no-btn {
+        background: linear-gradient(135deg, #7c3aed, #a855f7);
+        box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
+    }
+    
+    .level-item {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 10px;
+        font-family: 'Exo 2', Arial, sans-serif;
+        font-size: 1em;
+        font-weight: 700;
+        color: rgba(255,255,255,0.18);
+        cursor: not-allowed;
+        transition: all 0.2s ease;
+    }
+
+    .level-item .level-icon {
+        font-size: 0.7em;
+        line-height: 1;
+        opacity: 0.85;
+    }
+
+    .level-unlocked {
+        cursor: pointer;
+        background: rgba(0, 212, 255, 0.05);
+        color: #c9d1d9;
+        border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .level-unlocked:hover {
+        transform: scale(1.08) translateY(-2px);
+        background: rgba(0, 212, 255, 0.14);
+        border-color: rgba(0, 212, 255, 0.8);
+        box-shadow: 0 0 18px rgba(0, 212, 255, 0.35), 0 6px 20px rgba(0,0,0,0.4);
+        color: #fff;
+    }
+
+    .level-completed {
+        background: rgba(255, 215, 0, 0.07);
+        color: #ffd700;
+        border-color: rgba(255, 215, 0, 0.35);
+    }
+
+    .level-completed:hover {
+        background: rgba(255, 215, 0, 0.16);
+        border-color: rgba(255, 215, 0, 0.75);
+        box-shadow: 0 0 18px rgba(255, 215, 0, 0.3), 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    .level-current {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.15));
+        color: #fff;
+        border-color: #00d4ff;
+        animation: currentPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes currentPulse {
+        0%, 100% { box-shadow: 0 0 14px rgba(0, 212, 255, 0.45), 0 0 28px rgba(0, 212, 255, 0.15); }
+        50%       { box-shadow: 0 0 24px rgba(0, 212, 255, 0.85), 0 0 48px rgba(0, 212, 255, 0.35); }
+    }
+
+    .level-locked {
+        opacity: 0.35;
+        background: rgba(255,255,255,0.01);
+        border-color: rgba(255,255,255,0.05);
+    }
+
         /* History List */
         #historyList {
             list-style: none;
@@ -246,6 +468,7 @@
     <div id="ui">
         <div>Score: <span id="score">0</span></div>
         <div>Lives: <span id="lives">3</span></div>
+        <div>Level: <span id="level">1</span></div>
         <div>Username: <span id="username"></span></div>
         <button id="exitBtn" class="exit-button">Exit Game</button>
     </div>
@@ -279,6 +502,11 @@
         </div>
         
         <div class="menu-section">
+            <div class="menu-title">Level Progress</div>
+            <button id="levelSelectBtn" class="menu-btn">Select Level</button>
+        </div>
+        
+        <div class="menu-section">
             <div class="menu-title">Game History</div>
             <ul id="historyList">
                 <!-- History items will be added here -->
@@ -293,12 +521,7 @@
             <h2>Welcome to Breakout!</h2>
             <p>Please enter your username:</p>
             <input type="text" id="usernameInput" placeholder="Enter your username" maxlength="20" />
-            <p>Select difficulty:</p>
-            <select id="difficultySelect" class="difficulty-select">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
-            </select>
+
             <button id="startGameBtn">Start Game</button>
         </div>
     </div>
@@ -323,30 +546,41 @@
             </div>
         </div>
     </div>
+    <!-- Level Select Screen -->
+    <div id="levelSelectScreen" class="popup">
+        <div class="popup-content level-screen-content">
+            <button id="closeLevelSelectIcon" class="close-icon">&times;</button>
+            <h2>Select Level</h2>
+            <div id="levelGrid">
+                <!-- Levels will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Start Popup -->
+    <div id="levelStartPopup" class="popup">
+        <div class="popup-content level-start-content">
+            <h2 id="levelStartTitle">Level 1</h2>
+            <p>Get Ready!</p>
+            <div class="popup-buttons">
+                <button id="levelStartPlayBtn" class="confirm-btn yes-btn">Start Game</button>
+                <button id="levelStartSelectBtn" class="confirm-btn no-btn">Select Level</button>
+            </div>
+        </div>
+    </div>
+    
     <script type="module">
         import { BreakoutGame } from './src/game.ts';
         
         console.log('Script module started');
         const game = new BreakoutGame();
-        const difficultySelect = document.getElementById('difficultySelect');
-        let selectedDifficulty = 'medium'; 
         
-        if (difficultySelect) {
-            setTimeout(() => {
-                selectedDifficulty = difficultySelect.value;
-            }, 100);   
-            difficultySelect.addEventListener('change', () => {
-                selectedDifficulty = difficultySelect.value;
-            });
-        }
         const startGameBtn = document.getElementById('startGameBtn');
         const usernameInput = document.getElementById('usernameInput');
         function startGame() {
             const username = usernameInput.value.trim();
-            const actualDifficulty = difficultySelect.value;
             if (username) {
                 game.username = username;
-                game.setDifficulty(actualDifficulty);
                 const usernamePopup = document.getElementById('usernamePopup');
                 if (usernamePopup) {
                     usernamePopup.classList.remove('show');
@@ -465,6 +699,21 @@
             });
         }
         
+        // Level Select Logic
+        const levelSelectBtn = document.getElementById('levelSelectBtn');
+        const levelSelectScreen = document.getElementById('levelSelectScreen');
+        const closeLevelSelectIcon = document.getElementById('closeLevelSelectIcon');
+        
+        if (levelSelectBtn && levelSelectScreen && closeLevelSelectIcon) {
+            levelSelectBtn.addEventListener('click', () => {
+                game.openLevelSelect();
+            });
+            
+            closeLevelSelectIcon.addEventListener('click', () => {
+                game.closeLevelSelect();
+            });
+        }
+
         // Start the game initialization
         try {
             await game.start();
@@ -482,11 +731,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 1000;
+        z-index: 3000; /* Ensure popups are above side menu and UI */
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.3s ease;
     }
+    
+    /* Ensure critical popups are even higher */
+    #gamePopup { z-index: 3100; }
+    #exitConfirmPopup { z-index: 3200; }
+    
     .popup.show {
         transition: ease-in-out 0.4s;
         opacity: 1;
@@ -709,38 +963,53 @@
     }
 
     .confirm-btn {
-        padding: 0.8em 2em;
-        font-size: 1em;
-        border-radius: 5px;
+        padding: 0.75em 1.8em;
+        font-size: 0.9em;
+        border-radius: 8px;
         border: none;
         cursor: pointer;
-        font-weight: bold;
-        transition: transform 0.2s, box-shadow 0.2s;
+        font-family: 'Exo 2', Arial, sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.2s ease;
         color: white;
     }
 
     .confirm-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
 
     .confirm-btn:active {
         transform: translateY(0);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     .yes-btn {
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #00b894, #00d4ff);
+        box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
     }
+
     .yes-btn:hover {
-        background-color: #c82333;
+        background: linear-gradient(135deg, #00a381, #00b8e0);
     }
 
     .no-btn {
-        background-color: #6c757d;
+        background: linear-gradient(135deg, #7c3aed, #a855f7);
+        box-shadow: 0 0 12px rgba(124, 58, 237, 0.25);
     }
+
     .no-btn:hover {
-        background-color: #5a6268;
+        background: linear-gradient(135deg, #6d28d9, #9333ea);
+    }
+
+    #exitConfirmYesBtn {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        box-shadow: 0 0 12px rgba(220, 53, 69, 0.3);
+    }
+
+    #exitConfirmYesBtn:hover {
+        background: linear-gradient(135deg, #c82333, #b01e2b);
     }
 </style>
 </html>
