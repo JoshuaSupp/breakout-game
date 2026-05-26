@@ -1,12 +1,21 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './', // Use relative paths for assets
+  base: './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
-    target: 'esnext'
+    sourcemap: false,
+    target: 'esnext',
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          pixi: ['pixi.js'],
+          spine: ['@esotericsoftware/spine-pixi-v8'],
+        },
+      },
+    },
   },
   server: {
     open: true,

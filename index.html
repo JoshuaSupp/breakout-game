@@ -16,8 +16,9 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #000;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
@@ -26,8 +27,8 @@
         }
         
         #gameContainer {
-            border: 2px solid #fff;
-            background-color: #111;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            background: #1a1a2e;
             position: relative;
             max-width: 100vw;
             max-height: 100vh;
@@ -35,59 +36,150 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
         }
         
         #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
+            position: relative;
             color: white;
             font-size: 18px;
+            font-weight: bold;
             z-index: 2000;
             user-select: none;
             pointer-events: auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 20px;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            flex-shrink: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
-
-        /* Hamburger Menu */
-        #menuBtn {
+        
+        .ui-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .ui-row-second {
+            gap: 25px;
+        }
+        
+        .ui-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .ui-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .ui-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+        
+        #sideUi {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
+            top: 15px;
+            right: 15px;
             color: white;
-            font-size: 30px;
-            cursor: pointer;
-            z-index: 2002;
-            padding: 5px;
-            line-height: 1;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 2000;
+            user-select: none;
+            pointer-events: auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 15px;
         }
-
+        
+        /* Menu Button in UI */
+        .menu-button-ui {
+            background: linear-gradient(135deg, #1099bb, #0d7a9a);
+            color: white;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 8px 16px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+        }
+        
+        .menu-button-ui:hover {
+            background: linear-gradient(135deg, #0d7a9a, #1099bb);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.5);
+            border-color: rgba(0, 212, 255, 0.6);
+        }
+        
         #sideMenu {
             position: fixed;
-            top: 0;
-            right: -300px;
-            width: 300px;
-            height: 100vh;
-            background: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(10px);
-            border-left: 1px solid #333;
-            transition: right 0.3s ease;
-            z-index: 2001;
-            padding: 60px 20px 20px;
-            color: white;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        #sideMenu.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .menu-popup-content {
+            background: linear-gradient(145deg, #0d1117 0%, #161b22 60%, #0d1117 100%);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85);
+            padding: 2.5em 3em;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 350px;
+            max-width: 400px;
+            max-height: 80vh;
             overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(.68,-0.55,.27,1.55);
+            color: white;
         }
-
-        #sideMenu.open {
-            right: 0;
+        
+        #sideMenu.show .menu-popup-content {
+            transform: scale(1);
         }
-
+        
         .menu-section {
             margin-bottom: 30px;
         }
-
+        
         .menu-title {
             font-size: 1.2em;
             border-bottom: 1px solid #444;
@@ -96,14 +188,14 @@
             color: #1099bb;
             font-weight: bold;
         }
-
+        
         .setting-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
-
+        
         /* Toggle Switch */
         .switch {
             position: relative;
@@ -111,13 +203,13 @@
             width: 50px;
             height: 24px;
         }
-
+        
         .switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-
+        
         .slider {
             position: absolute;
             cursor: pointer;
@@ -129,7 +221,7 @@
             transition: .4s;
             border-radius: 24px;
         }
-
+        
         .slider:before {
             position: absolute;
             content: "";
@@ -141,15 +233,15 @@
             transition: .4s;
             border-radius: 50%;
         }
-
+        
         input:checked + .slider {
             background-color: #1099bb;
         }
-
+        
         input:checked + .slider:before {
             transform: translateX(26px);
         }
-
+        
         /* Menu Button */
         .menu-btn {
             background-color: #1099bb;
@@ -167,208 +259,243 @@
             background-color: #0d7a9a;
         }
         
-    /* Level Select Screen */
-    .level-screen-content {
-        max-width: 620px !important;
-        width: 92% !important;
-        max-height: 85vh;
-        overflow-y: auto;
-        position: relative;
-        background: linear-gradient(145deg, #0d1117 0%, #161b22 60%, #0d1117 100%) !important;
-        border: 1px solid rgba(0, 212, 255, 0.3) !important;
-        box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
-    }
+        /* Level Select Screen */
+        .level-screen-content {
+            max-width: 620px !important;
+            width: 92% !important;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            background: linear-gradient(145deg, #0d1117 0%, #161b22 60%, #0d1117 100%) !important;
+            border: 1px solid rgba(0, 212, 255, 0.3) !important;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
+        }
+        
+        .level-screen-content h2 {
+            font-family: 'Exo 2', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 1.8em;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(90deg, #00d4ff, #a855f7, #00d4ff);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
+            margin: 0.3em 0 0.2em;
+        }
+        
+        @keyframes shimmer {
+            0%   { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        
+        .close-icon {
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 1.3em;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-icon:hover {
+            background: rgba(244, 67, 54, 0.15);
+            border-color: #f44336;
+            color: #f44336;
+        }
+        
+        #levelGrid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            padding: 10px 20px 20px;
+            margin-bottom: 10px;
+        }
+        
+        /* Level Start Popup */
+        .level-start-content {
+            max-width: 420px;
+            text-align: center;
+            background: linear-gradient(145deg, #0d1117 0%, #161b22 100%) !important;
+            border: 1px solid rgba(0, 212, 255, 0.3) !important;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
+        }
+        
+        .level-start-content h2 {
+            font-family: 'Exo 2', Arial, sans-serif;
+            font-size: 3em;
+            font-weight: 900;
+            margin-bottom: 0.1em;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: levelGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes levelGlow {
+            from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.2); }
+            to   { text-shadow: 0 0 25px rgba(0, 212, 255, 1),   0 0 50px rgba(0, 212, 255, 0.5), 0 0 80px rgba(0, 212, 255, 0.2); }
+        }
+        
+        .level-start-content p {
+            font-family: 'Exo 2', Arial, sans-serif;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #8892a4;
+            margin-bottom: 1.8em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .popup-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .confirm-btn {
+            padding: 0.75em 1.8em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Exo 2', Arial, sans-serif;
+            font-size: 0.9em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        
+        .confirm-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+        
+        .yes-btn {
+            background: linear-gradient(135deg, #00b894, #00d4ff);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+        }
+        
+        .no-btn {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
+        }
+        
+        .level-item {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 2px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            font-family: 'Exo 2', Arial, sans-serif;
+            font-size: 1em;
+            font-weight: 700;
+            color: rgba(255,255,255,0.18);
+            cursor: not-allowed;
+            transition: all 0.2s ease;
+        }
+        
+        .level-item .level-icon {
+            font-size: 0.7em;
+            line-height: 1;
+            opacity: 0.85;
+        }
+        
+        .level-unlocked {
+            cursor: pointer;
+            background: rgba(0, 212, 255, 0.05);
+            color: #c9d1d9;
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+        
+        .level-unlocked:hover {
+            transform: scale(1.08) translateY(-2px);
+            background: rgba(0, 212, 255, 0.14);
+            border-color: rgba(0, 212, 255, 0.8);
+            box-shadow: 0 0 18px rgba(0, 212, 255, 0.35), 0 6px 20px rgba(0,0,0,0.4);
+            color: #fff;
+        }
+        
+        .level-completed {
+            background: rgba(255, 215, 0, 0.07);
+            color: #ffd700;
+            border-color: rgba(255, 215, 0, 0.35);
+        }
+        
+        .level-completed:hover {
+            background: rgba(255, 215, 0, 0.16);
+            border-color: rgba(255, 215, 0, 0.75);
+            box-shadow: 0 0 18px rgba(255, 215, 0, 0.3), 0 6px 20px rgba(0,0,0,0.4);
+        }
+        
+        .level-current {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.15));
+            color: #fff;
+            border-color: #00d4ff;
+            animation: currentPulse 1.8s ease-in-out infinite;
+        }
+        
+        @keyframes currentPulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(0, 212, 255, 0.45), 0 0 28px rgba(0, 212, 255, 0.15); }
+            50%       { box-shadow: 0 0 24px rgba(0, 212, 255, 0.85), 0 0 48px rgba(0, 212, 255, 0.35); }
+        }
+        
+        .level-locked {
+            opacity: 0.35;
+            background: rgba(255,255,255,0.01);
+            border-color: rgba(255,255,255,0.05);
+        }
+        
+        /* Game Info */
+        .game-info-text {
+            font-size: 0.82em;
+            color: #9aa3b0;
+            text-align: left;
+            line-height: 1.65;
+            margin: 0 0 8px;
+        }
 
-    .level-screen-content h2 {
-        font-family: 'Exo 2', Arial, sans-serif;
-        font-weight: 900;
-        font-size: 1.8em;
-        text-transform: uppercase;
-        letter-spacing: 4px;
-        background: linear-gradient(90deg, #00d4ff, #a855f7, #00d4ff);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: shimmer 3s linear infinite;
-        margin: 0.3em 0 0.2em;
-    }
+        .powerup-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-top: 4px;
+        }
 
-    @keyframes shimmer {
-        0%   { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
-    }
+        .powerup-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.81em;
+            color: #c9d1d9;
+            text-align: left;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
 
-    .close-icon {
-        position: absolute;
-        top: 12px;
-        right: 15px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        font-size: 1.3em;
-        cursor: pointer;
-        color: #666;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .close-icon:hover {
-        background: rgba(244, 67, 54, 0.15);
-        border-color: #f44336;
-        color: #f44336;
-    }
-
-    #levelGrid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 12px;
-        padding: 10px 20px 20px;
-        margin-bottom: 10px;
-    }
-    
-    /* Level Start Popup */
-    .level-start-content {
-        max-width: 420px;
-        text-align: center;
-        background: linear-gradient(145deg, #0d1117 0%, #161b22 100%) !important;
-        border: 1px solid rgba(0, 212, 255, 0.3) !important;
-        box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
-    }
-
-    .level-start-content h2 {
-        font-family: 'Exo 2', Arial, sans-serif;
-        font-size: 3em;
-        font-weight: 900;
-        margin-bottom: 0.1em;
-        color: #00d4ff;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        animation: levelGlow 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes levelGlow {
-        from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.2); }
-        to   { text-shadow: 0 0 25px rgba(0, 212, 255, 1),   0 0 50px rgba(0, 212, 255, 0.5), 0 0 80px rgba(0, 212, 255, 0.2); }
-    }
-
-    .level-start-content p {
-        font-family: 'Exo 2', Arial, sans-serif;
-        font-size: 0.9em;
-        font-weight: 600;
-        color: #8892a4;
-        margin-bottom: 1.8em;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-    }
-
-    .popup-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-    }
-
-    .confirm-btn {
-        padding: 0.75em 1.8em;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-family: 'Exo 2', Arial, sans-serif;
-        font-size: 0.9em;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.2s ease;
-        color: white;
-    }
-
-    .confirm-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    }
-
-    .yes-btn {
-        background: linear-gradient(135deg, #00b894, #00d4ff);
-        box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
-    }
-
-    .no-btn {
-        background: linear-gradient(135deg, #7c3aed, #a855f7);
-        box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
-    }
-    
-    .level-item {
-        aspect-ratio: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 2px;
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 10px;
-        font-family: 'Exo 2', Arial, sans-serif;
-        font-size: 1em;
-        font-weight: 700;
-        color: rgba(255,255,255,0.18);
-        cursor: not-allowed;
-        transition: all 0.2s ease;
-    }
-
-    .level-item .level-icon {
-        font-size: 0.7em;
-        line-height: 1;
-        opacity: 0.85;
-    }
-
-    .level-unlocked {
-        cursor: pointer;
-        background: rgba(0, 212, 255, 0.05);
-        color: #c9d1d9;
-        border-color: rgba(0, 212, 255, 0.3);
-    }
-
-    .level-unlocked:hover {
-        transform: scale(1.08) translateY(-2px);
-        background: rgba(0, 212, 255, 0.14);
-        border-color: rgba(0, 212, 255, 0.8);
-        box-shadow: 0 0 18px rgba(0, 212, 255, 0.35), 0 6px 20px rgba(0,0,0,0.4);
-        color: #fff;
-    }
-
-    .level-completed {
-        background: rgba(255, 215, 0, 0.07);
-        color: #ffd700;
-        border-color: rgba(255, 215, 0, 0.35);
-    }
-
-    .level-completed:hover {
-        background: rgba(255, 215, 0, 0.16);
-        border-color: rgba(255, 215, 0, 0.75);
-        box-shadow: 0 0 18px rgba(255, 215, 0, 0.3), 0 6px 20px rgba(0,0,0,0.4);
-    }
-
-    .level-current {
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.15));
-        color: #fff;
-        border-color: #00d4ff;
-        animation: currentPulse 1.8s ease-in-out infinite;
-    }
-
-    @keyframes currentPulse {
-        0%, 100% { box-shadow: 0 0 14px rgba(0, 212, 255, 0.45), 0 0 28px rgba(0, 212, 255, 0.15); }
-        50%       { box-shadow: 0 0 24px rgba(0, 212, 255, 0.85), 0 0 48px rgba(0, 212, 255, 0.35); }
-    }
-
-    .level-locked {
-        opacity: 0.35;
-        background: rgba(255,255,255,0.01);
-        border-color: rgba(255,255,255,0.05);
-    }
+        .pu-icon {
+            font-size: 1.1em;
+            min-width: 22px;
+            text-align: center;
+        }
 
         /* History List */
         #historyList {
@@ -376,7 +503,7 @@
             padding: 0;
             margin: 0;
         }
-
+        
         .history-item {
             background: rgba(255, 255, 255, 0.05);
             padding: 10px;
@@ -386,11 +513,11 @@
             justify-content: space-between;
             font-size: 0.9em;
         }
-
+        
         .history-win {
             border-left: 3px solid #4caf50;
         }
-
+        
         .history-loss {
             border-left: 3px solid #f44336;
         }
@@ -398,17 +525,71 @@
         /* Responsive font sizing */
         @media (max-width: 768px) {
             #ui {
+                font-size: 16px;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                gap: 10px;
+                padding: 10px 15px;
+            }
+            
+            .ui-row {
+                gap: 15px;
+            }
+            
+            .ui-row-second {
+                gap: 20px;
+            }
+            
+            #sideUi {
                 font-size: 14px;
-                top: 8px;
-                left: 8px;
+                top: 10px;
+                right: 10px;
+                gap: 10px;
+                padding: 10px 12px;
+            }
+            
+            .ui-value {
+                font-size: 20px;
+            }
+            
+            .ui-label {
+                font-size: 11px;
             }
         }
         
         @media (max-width: 480px) {
             #ui {
+                font-size: 14px;
+                top: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                gap: 8px;
+                padding: 8px 12px;
+            }
+            
+            .ui-row {
+                gap: 12px;
+            }
+            
+            .ui-row-second {
+                gap: 15px;
+            }
+            
+            #sideUi {
                 font-size: 12px;
-                top: 5px;
-                left: 5px;
+                top: 8px;
+                right: 8px;
+                gap: 8px;
+                padding: 8px 10px;
+            }
+            
+            .ui-value {
+                font-size: 18px;
+            }
+            
+            .ui-label {
+                font-size: 10px;
             }
         }
         
@@ -451,7 +632,26 @@
                 padding: 0.3em 0.6em;
             }
         }
-        
+
+
+        /* Portrait mobile: remove fixed aspect ratio so JS can set a taller canvas */
+        @media (max-width: 768px) and (orientation: portrait) {
+            body {
+                justify-content: flex-start;
+            }
+
+            #gameContainer {
+                aspect-ratio: auto;
+                width: 100%;
+                max-width: 100vw;
+                max-height: none;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                border-bottom: none;
+            }
+        }
+
         /* Ensure canvas scales properly */
         canvas {
             max-width: 100%;
@@ -466,51 +666,102 @@
 </head>
 <body>
     <div id="ui">
-        <div>Score: <span id="score">0</span></div>
-        <div>Lives: <span id="lives">3</span></div>
-        <div>Level: <span id="level">1</span></div>
-        <div>Username: <span id="username"></span></div>
-        <button id="exitBtn" class="exit-button">Exit Game</button>
+        <div class="ui-row">
+            <div class="ui-item">
+                <div class="ui-label">Score</div>
+                <div class="ui-value" id="score">0</div>
+            </div>
+            <div class="ui-item">
+                <div class="ui-label">High Score</div>
+                <div class="ui-value" id="highScore">0</div>
+            </div>
+            <div class="ui-item">
+                <div class="ui-label">Timer</div>
+                <div class="ui-value" id="timer">0:00</div>
+            </div>
+            <div class="ui-item">
+                <div class="ui-label">Level</div>
+                <div class="ui-value" id="level">1</div>
+            </div>
+        </div>
+        <div class="ui-row ui-row-second">
+            <div class="ui-item">
+                <div class="ui-label">Lives</div>
+                <div class="ui-value" id="lives">3</div>
+            </div>
+            <div class="ui-item">
+                <div class="ui-label">Player</div>
+                <div class="ui-value" id="username"></div>
+            </div>
+            <button id="exitBtn" class="exit-button">Exit Game</button>
+        </div>
+        <div class="ui-row ui-row-third">
+            <button id="menuBtn" class="menu-button-ui">Menu</button>
+        </div>
     </div>
     
-    <button id="menuBtn">☰</button>
+    <div id="sideUi">
+    </div>
     
     <div id="sideMenu">
-        <div class="menu-section">
-            <div class="menu-title">Settings</div>
-            <div class="setting-row">
-                <span>Music</span>
-                <label class="switch">
-                    <input type="checkbox" id="musicToggle" checked>
-                    <span class="slider"></span>
-                </label>
+        <div class="menu-popup-content">
+            <button id="closeMenuIcon" class="close-icon">&times;</button>
+            <div class="menu-section">
+                <div class="menu-title">Settings</div>
+                <div class="setting-row">
+                    <span>Music</span>
+                    <label class="switch">
+                        <input type="checkbox" id="musicToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>Sound Effects</span>
+                    <label class="switch">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>Night Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="bgToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
-            <div class="setting-row">
-                <span>Sound Effects</span>
-                <label class="switch">
-                    <input type="checkbox" id="soundToggle" checked>
-                    <span class="slider"></span>
-                </label>
+            
+            <div class="menu-section">
+                <div class="menu-title">How to Play</div>
+                <p class="game-info-text">Break all the bricks before time runs out to advance to the next level. Each level the ball gets faster, the rows increase, and you have less time. Collect falling power-ups with your paddle!</p>
+                <p class="game-info-text"><strong style="color:#00d4ff">30 levels</strong> — unlock and replay any level you've cleared.</p>
             </div>
-            <div class="setting-row">
-                <span>Night Mode</span>
-                <label class="switch">
-                    <input type="checkbox" id="bgToggle">
-                    <span class="slider"></span>
-                </label>
+
+            <div class="menu-section">
+                <div class="menu-title">Power-Ups</div>
+                <div class="powerup-list">
+                    <div class="powerup-item"><span class="pu-icon">⭐</span><div><strong>BIG</strong> — Paddle grows 1.5× for 10s</div></div>
+                    <div class="powerup-item"><span class="pu-icon">⭐</span><div><strong>SMALL</strong> — Paddle shrinks for 10s (watch out!)</div></div>
+                    <div class="powerup-item"><span class="pu-icon">🧪</span><div><strong>FAST</strong> — Ball speeds up 1.5× for 10s</div></div>
+                    <div class="powerup-item"><span class="pu-icon">🧪</span><div><strong>SLOW</strong> — Ball slows down 1.5× for 10s</div></div>
+                    <div class="powerup-item"><span class="pu-icon">🪙</span><div><strong>ZAP</strong> — Lightning destroys 4 random bricks</div></div>
+                    <div class="powerup-item"><span class="pu-icon">❓</span><div><strong>???</strong> — Mystery: activates a random power-up</div></div>
+                    <div class="powerup-item"><span class="pu-icon">❤️</span><div><strong>+LIFE</strong> — Gain an extra life (up to 9)</div></div>
+                    <div class="powerup-item"><span class="pu-icon">➕</span><div><strong>+30s</strong> — Adds 30 seconds to the timer</div></div>
+                </div>
             </div>
-        </div>
-        
-        <div class="menu-section">
-            <div class="menu-title">Level Progress</div>
-            <button id="levelSelectBtn" class="menu-btn">Select Level</button>
-        </div>
-        
-        <div class="menu-section">
-            <div class="menu-title">Game History</div>
-            <ul id="historyList">
-                <!-- History items will be added here -->
-            </ul>
+
+            <div class="menu-section">
+                <div class="menu-title">Level Progress</div>
+                <button id="levelSelectBtn" class="menu-btn">Select Level</button>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-title">Game History</div>
+                <ul id="historyList">
+                    <!-- History items will be added here -->
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -521,7 +772,7 @@
             <h2>Welcome to Breakout!</h2>
             <p>Please enter your username:</p>
             <input type="text" id="usernameInput" placeholder="Enter your username" maxlength="20" />
-
+            <div id="usernameError" class="username-error">Please enter a username!</div>
             <button id="startGameBtn">Start Game</button>
         </div>
     </div>
@@ -592,9 +843,14 @@
                 game.initializeGame();
                 game.updateUI(); 
             } else {
-                alert('Please enter a username!');
+                document.getElementById('usernameError')?.classList.add('show');
             }
-        } 
+        }
+        if (usernameInput) {
+            usernameInput.addEventListener('input', () => {
+                document.getElementById('usernameError')?.classList.remove('show');
+            });
+        }
         if (startGameBtn) {
             startGameBtn.addEventListener('click', startGame);
         }
@@ -614,6 +870,8 @@
             exitBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // Pause the game when exit button is clicked
+                game.pause();
                 exitConfirmPopup.classList.add('show');
             });
 
@@ -650,6 +908,8 @@
             // Handle No click
             exitConfirmNoBtn.addEventListener('click', () => {
                 exitConfirmPopup.classList.remove('show');
+                // Resume the game when user cancels exit
+                game.resume();
             });
         } else if (!exitBtn) {
             console.error('CRITICAL: Exit button not found in DOM');
@@ -658,21 +918,36 @@
         // Menu Logic
         const menuBtn = document.getElementById('menuBtn');
         const sideMenu = document.getElementById('sideMenu');
+        const closeMenuIcon = document.getElementById('closeMenuIcon');
         const musicToggle = document.getElementById('musicToggle');
         const soundToggle = document.getElementById('soundToggle');
 
         if (menuBtn && sideMenu) {
             menuBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                sideMenu.classList.toggle('open');
+                sideMenu.classList.toggle('show');
+                if (sideMenu.classList.contains('show')) {
+                    game.pause(); 
+                } else {
+                    game.resume();
+                }
             });
 
-            // Close menu when clicking outside
+            // Close menu when clicking outside or on close icon
+            const closeMenu = () => {
+                sideMenu.classList.remove('show');
+                game.resume();
+            };
+
+            if (closeMenuIcon) {
+                closeMenuIcon.addEventListener('click', closeMenu);
+            }
+
             document.addEventListener('click', (e) => {
-                if (sideMenu.classList.contains('open') && 
-                    !sideMenu.contains(e.target) && 
+                if (sideMenu.classList.contains('show') && 
+                    !sideMenu.querySelector('.menu-popup-content').contains(e.target) && 
                     e.target !== menuBtn) {
-                    sideMenu.classList.remove('open');
+                    closeMenu();
                 }
             });
         }
@@ -884,6 +1159,25 @@
     #usernameInput::placeholder {
         color: #999;
         font-style: italic;
+    }
+
+    .username-error {
+        display: none;
+        color: #e74c3c;
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid rgba(231, 76, 60, 0.4);
+        border-radius: 6px;
+        padding: 0.4em 0.8em;
+        font-size: 0.85em;
+        font-weight: 600;
+        margin-top: 0.3em;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .username-error.show {
+        display: block;
     }
     
     #usernamePopup .popup-content {

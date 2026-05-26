@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <title>Breakout — Level Tester</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Exo 2', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* ── Cheat panel ─────────────────────────────────── */
+        #cheatPanel {
+            width: 100%;
+            background: linear-gradient(90deg, #7c3aed, #a855f7);
+            color: #fff;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            z-index: 9999;
+        }
+
+        #cheatPanel .cheat-label {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.9;
+            white-space: nowrap;
+        }
+
+        #cheatPanel .quick-btns {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            padding: 3px 9px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Exo 2', Arial, sans-serif;
+            transition: background 0.15s;
+        }
+        .quick-btn:hover { background: rgba(255,255,255,0.35); }
+
+        #cheatPanel .custom-jump {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: auto;
+        }
+
+        #levelInput {
+            width: 52px;
+            padding: 3px 6px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.4);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            font-family: 'Exo 2', Arial, sans-serif;
+        }
+        #levelInput:focus { outline: none; border-color: #fff; }
+
+        #jumpBtn {
+            background: #fff;
+            color: #7c3aed;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Exo 2', Arial, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #jumpBtn:hover { background: #e8d5ff; }
+
+        /* ── Game UI header ──────────────────────────────── */
+        #ui {
+            position: relative;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 2000;
+            user-select: none;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-top: none;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .ui-row { display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .ui-item { display: flex; flex-direction: column; align-items: center; }
+        .ui-label { font-size: 12px; color: rgba(255,255,255,0.9); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .ui-value { font-size: 22px; font-weight: 900; color: #fff; }
+
+        .exit-button {
+            background: #dc3545; color: white; border: none; padding: 0.4em 0.9em;
+            font-size: 0.85em; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: 'Exo 2', Arial, sans-serif;
+        }
+        .exit-button:hover { background: #c82333; }
+
+        .menu-button-ui {
+            background: linear-gradient(135deg, #1099bb, #0d7a9a); color: white;
+            border: 1px solid rgba(0,212,255,0.3); padding: 6px 14px; font-size: 11px;
+            cursor: pointer; border-radius: 8px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 0.5px; font-family: 'Exo 2', Arial, sans-serif;
+        }
+
+        /* ── Game canvas container ───────────────────────── */
+        #gameContainer {
+            border: 3px solid rgba(255,255,255,0.15);
+            background: #1a1a2e;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0 0 10px 10px;
+        }
+
+        canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+
+        /* ── Popups (shared) ─────────────────────────────── */
+        .popup {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 3000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .popup.show { opacity: 1; pointer-events: auto; }
+
+        .popup-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 2em 2.5em;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 300px;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(.68,-.55,.27,1.55);
+        }
+        .popup.show .popup-content { transform: scale(1); }
+
+        #popupOkBtn, #startGameBtn {
+            margin-top: 1em; padding: 0.7em 2em; font-size: 1em; border-radius: 5px;
+            border: none; background: #1099bb; color: #fff; cursor: pointer;
+            font-weight: bold; font-family: 'Exo 2', Arial, sans-serif;
+        }
+        #usernameInput {
+            width: 100%; padding: 0.7em; font-size: 1em; border: 2px solid #ddd;
+            border-radius: 5px; margin: 0.8em 0; text-align: center;
+        }
+        .username-error {
+            display: none; color: #e74c3c;
+            background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.4);
+            border-radius: 6px; padding: 0.4em 0.8em; font-size: 0.85em;
+            font-weight: 600; margin-top: 0.3em; width: 100%; text-align: center;
+        }
+        .username-error.show { display: block; }
+
+        .popup-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 1.2em; }
+        .confirm-btn {
+            padding: 0.7em 1.5em; border: none; border-radius: 8px; cursor: pointer;
+            font-family: 'Exo 2', Arial, sans-serif; font-size: 0.85em; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; color: white;
+        }
+        .yes-btn { background: linear-gradient(135deg, #00b894, #00d4ff); }
+        .no-btn  { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+        #exitConfirmYesBtn { background: linear-gradient(135deg, #dc3545, #c82333); }
+
+        /* ── Side menu ───────────────────────────────────── */
+        #sideMenu {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 3000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #sideMenu.show { opacity: 1; pointer-events: auto; }
+        .menu-popup-content {
+            background: linear-gradient(145deg,#0d1117 0%,#161b22 60%,#0d1117 100%);
+            border: 1px solid rgba(0,212,255,0.3); box-shadow: 0 0 40px rgba(0,212,255,0.12);
+            padding: 2em 2.5em; border-radius: 15px; min-width: 320px; max-width: 380px;
+            max-height: 80vh; overflow-y: auto; color: white; position: relative;
+        }
+        .menu-section { margin-bottom: 24px; }
+        .menu-title { font-size: 1.1em; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 12px; color: #1099bb; font-weight: bold; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top:0; left:0; right:0; bottom:0; background:#ccc; transition:.4s; border-radius:22px; }
+        .slider:before { position:absolute; content:""; height:14px; width:14px; left:4px; bottom:4px; background:white; transition:.4s; border-radius:50%; }
+        input:checked + .slider { background: #1099bb; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .menu-btn { background:#1099bb; color:white; border:none; padding:10px; width:100%; font-size:15px; cursor:pointer; border-radius:5px; font-family:'Exo 2',Arial,sans-serif; }
+        .close-icon {
+            position: absolute; top: 10px; right: 12px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 50%; width: 30px; height: 30px;
+            font-size: 1.2em; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ── Level select ────────────────────────────────── */
+        .level-screen-content { max-width: 580px !important; width: 92% !important; max-height: 82vh; overflow-y: auto; position: relative; }
+        #levelGrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; padding: 8px 18px 18px; }
+        .level-item { aspect-ratio: 1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:8px; font-size:0.95em; font-weight:700; color:rgba(255,255,255,0.2); cursor:not-allowed; transition:all 0.2s; }
+        .level-item .level-icon { font-size:0.65em; }
+        .level-unlocked { cursor:pointer; background:rgba(0,212,255,0.05); color:#c9d1d9; border-color:rgba(0,212,255,0.3); }
+        .level-unlocked:hover { background:rgba(0,212,255,0.14); border-color:rgba(0,212,255,0.8); color:#fff; }
+        .level-completed { background:rgba(255,215,0,0.07); color:#ffd700; border-color:rgba(255,215,0,0.35); }
+        .level-current { background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(124,58,237,0.15)); color:#fff; border-color:#00d4ff; }
+        .level-locked { opacity:0.3; }
+        .level-start-content { max-width: 400px; text-align:center; }
+        .level-start-content h2 { font-size:2.8em; font-weight:900; color:#00d4ff; text-transform:uppercase; letter-spacing:3px; margin-bottom:0.1em; }
+        .level-start-content p { font-size:0.85em; color:#8892a4; text-transform:uppercase; letter-spacing:3px; margin-bottom:1.5em; }
+
+        #sideUi { display: none; }
+
+        /* ── History list ────────────────────────────────── */
+        #historyList { list-style:none; padding:0; margin:0; }
+        .history-item { background:rgba(255,255,255,0.05); padding:8px; margin-bottom:6px; border-radius:5px; display:flex; justify-content:space-between; font-size:0.85em; }
+        .history-win  { border-left:3px solid #4caf50; }
+        .history-loss { border-left:3px solid #f44336; }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            body { justify-content: flex-start; }
+            #gameContainer { aspect-ratio: auto; width: 100%; max-width: 100vw; border-radius: 0; border-left: none; border-right: none; border-bottom: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cheat panel -->
+    <div id="cheatPanel">
+        <span class="cheat-label">⚡ Level Tester</span>
+        <div class="quick-btns" id="quickBtns"></div>
+        <div class="custom-jump">
+            <input id="levelInput" type="number" min="1" max="30" value="1" />
+            <button id="jumpBtn">Jump</button>
+        </div>
+    </div>
+
+    <!-- Stats header -->
+    <div id="ui">
+        <div class="ui-row">
+            <div class="ui-item"><div class="ui-label">Score</div><div class="ui-value" id="score">0</div></div>
+            <div class="ui-item"><div class="ui-label">High Score</div><div class="ui-value" id="highScore">0</div></div>
+            <div class="ui-item"><div class="ui-label">Timer</div><div class="ui-value" id="timer">0:00</div></div>
+            <div class="ui-item"><div class="ui-label">Level</div><div class="ui-value" id="level">1</div></div>
+        </div>
+        <div class="ui-row">
+            <div class="ui-item"><div class="ui-label">Lives</div><div class="ui-value" id="lives">3</div></div>
+            <div class="ui-item"><div class="ui-label">Player</div><div class="ui-value" id="username"></div></div>
+            <button id="exitBtn" class="exit-button" style="display:none">Exit</button>
+        </div>
+        <div class="ui-row">
+            <button id="menuBtn" class="menu-button-ui">Menu</button>
+        </div>
+    </div>
+
+    <div id="sideUi"></div>
+    <div id="gameContainer"></div>
+
+    <!-- Username popup (hidden immediately by script) -->
+    <div id="usernamePopup" class="popup show">
+        <div class="popup-content">
+            <h2>Welcome!</h2>
+            <p>Enter your username:</p>
+            <input type="text" id="usernameInput" placeholder="Username" maxlength="20" />
+            <div id="usernameError" class="username-error">Please enter a username!</div>
+            <button id="startGameBtn">Start</button>
+        </div>
+    </div>
+
+    <!-- Game over / win popup -->
+    <div id="gamePopup" class="popup">
+        <div class="popup-content">
+            <h2 id="popupTitle"></h2>
+            <p id="popupMessage"></p>
+            <button id="popupOkBtn">OK</button>
+        </div>
+    </div>
+
+    <!-- Exit confirm -->
+    <div id="exitConfirmPopup" class="popup">
+        <div class="popup-content">
+            <h2>Exit?</h2>
+            <p>Your progress will be lost.</p>
+            <div class="popup-buttons">
+                <button id="exitConfirmYesBtn" class="confirm-btn yes-btn">Yes</button>
+                <button id="exitConfirmNoBtn"  class="confirm-btn no-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level select -->
+    <div id="levelSelectScreen" class="popup">
+        <div class="popup-content level-screen-content">
+            <button id="closeLevelSelectIcon" class="close-icon">&times;</button>
+            <h2 style="color:#00d4ff;margin:0.5em 0 0.3em">Select Level</h2>
+            <div id="levelGrid"></div>
+        </div>
+    </div>
+
+    <!-- Level start popup -->
+    <div id="levelStartPopup" class="popup">
+        <div class="popup-content level-start-content">
+            <h2 id="levelStartTitle">Level 1</h2>
+            <p>Get Ready!</p>
+            <div class="popup-buttons">
+                <button id="levelStartPlayBtn"   class="confirm-btn yes-btn">Start Game</button>
+                <button id="levelStartSelectBtn" class="confirm-btn no-btn">Select Level</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side menu -->
+    <div id="sideMenu">
+        <div class="menu-popup-content">
+            <button id="closeMenuIcon" class="close-icon">&times;</button>
+            <div class="menu-section">
+                <div class="menu-title">Settings</div>
+                <div class="setting-row"><span>Music</span><label class="switch"><input type="checkbox" id="musicToggle" checked><span class="slider"></span></label></div>
+                <div class="setting-row"><span>Sound</span><label class="switch"><input type="checkbox" id="soundToggle" checked><span class="slider"></span></label></div>
+                <div class="setting-row"><span>Night Mode</span><label class="switch"><input type="checkbox" id="bgToggle"><span class="slider"></span></label></div>
+            </div>
+            <div class="menu-section">
+                <div class="menu-title">Level Progress</div>
+                <button id="levelSelectBtn" class="menu-btn">Select Level</button>
+            </div>
+            <div class="menu-section">
+                <div class="menu-title">History</div>
+                <ul id="historyList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { BreakoutGame } from './src/game.ts';
+
+        // ── Unlock all 30 levels ─────────────────────────
+        localStorage.setItem('breakout_highestLevel', '30');
+        const TESTER_NAME = 'TESTER';
+        sessionStorage.setItem('breakoutUsername', TESTER_NAME);
+
+        // ── Boot game ────────────────────────────────────
+        const game = new BreakoutGame();
+        await game.start();
+
+        // Skip username popup immediately
+        game.username = TESTER_NAME;
+        document.getElementById('usernamePopup').classList.remove('show');
+        game.initializeGame();
+
+        // ── Cheat panel: quick-jump buttons ──────────────
+        const QUICK_LEVELS = [1, 5, 10, 15, 20, 25, 30];
+        const quickBtns = document.getElementById('quickBtns');
+        QUICK_LEVELS.forEach(n => {
+            const btn = document.createElement('button');
+            btn.className = 'quick-btn';
+            btn.textContent = `L${n}`;
+            btn.addEventListener('click', () => jumpTo(n));
+            quickBtns.appendChild(btn);
+        });
+
+        document.getElementById('jumpBtn').addEventListener('click', () => {
+            const n = parseInt(document.getElementById('levelInput').value, 10);
+            if (n >= 1 && n <= 30) jumpTo(n);
+        });
+
+        document.getElementById('levelInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('jumpBtn').click();
+        });
+
+        function jumpTo(level) {
+            // Re-ensure all levels stay unlocked (game.startLevel checks this)
+            localStorage.setItem('breakout_highestLevel', '30');
+            game.highestLevelUnlocked = 30;
+            game.startLevel(level);
+            document.getElementById('levelInput').value = level;
+        }
+
+        // ── Menu wiring (same as index.html) ─────────────
+        const menuBtn   = document.getElementById('menuBtn');
+        const sideMenu  = document.getElementById('sideMenu');
+        const closeMenu = document.getElementById('closeMenuIcon');
+        const doClose   = () => { sideMenu.classList.remove('show'); game.resume(); };
+
+        menuBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            sideMenu.classList.toggle('show');
+            sideMenu.classList.contains('show') ? game.pause() : game.resume();
+        });
+        closeMenu.addEventListener('click', doClose);
+        document.addEventListener('click', e => {
+            if (sideMenu.classList.contains('show') &&
+                !sideMenu.querySelector('.menu-popup-content').contains(e.target) &&
+                e.target !== menuBtn) doClose();
+        });
+
+        document.getElementById('musicToggle').addEventListener('change', e => game.toggleMusic(e.target.checked));
+        document.getElementById('soundToggle').addEventListener('change', e => game.toggleSound(e.target.checked));
+        document.getElementById('bgToggle').addEventListener('change', e => game.setBackground(e.target.checked ? 'night' : 'morning'));
+
+        const levelSelectBtn    = document.getElementById('levelSelectBtn');
+        const levelSelectScreen = document.getElementById('levelSelectScreen');
+        const closeLevelSelect  = document.getElementById('closeLevelSelectIcon');
+        levelSelectBtn.addEventListener('click', () => game.openLevelSelect());
+        closeLevelSelect.addEventListener('click', () => game.closeLevelSelect());
+
+        const exitBtn           = document.getElementById('exitBtn');
+        const exitConfirmPopup  = document.getElementById('exitConfirmPopup');
+        exitBtn.addEventListener('click', () => { game.pause(); exitConfirmPopup.classList.add('show'); });
+        document.getElementById('exitConfirmYesBtn').addEventListener('click', () => {
+            exitConfirmPopup.classList.remove('show');
+            game.gameState = 'start';
+            game.score = 0;
+            game.lives = 3;
+            game.resetGame();
+            game.gameState = 'start';
+            game.updateUI();
+        });
+        document.getElementById('exitConfirmNoBtn').addEventListener('click', () => {
+            exitConfirmPopup.classList.remove('show');
+            game.resume();
+        });
+
+        document.getElementById('musicToggle').checked = game.musicEnabled;
+        document.getElementById('soundToggle').checked = game.soundEnabled;
+        document.getElementById('bgToggle').checked    = game.backgroundType === 'night';
+    </script>
+</body>
+</html>
