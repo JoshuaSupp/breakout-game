@@ -12,7 +12,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           pixi: ['pixi.js'],
-          spine: ['@esotericsoftware/spine-pixi-v8'],
         },
       },
     },
