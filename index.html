@@ -2,1308 +2,251 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#07011a">
+    <title>Neon Breakout</title>
+    <style>html, body { margin: 0; background: #07011a; color: #f6eeff; }</style>
+    <link rel="stylesheet" href="./src/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <title>Breakout Game</title>
-    <!-- Poki SDK -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Exo 2', Arial, sans-serif;
-            overflow: hidden;
-        }
-        
-        #gameContainer {
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            background: #1a1a2e;
-            position: relative;
-            max-width: 100vw;
-            max-height: 100vh;
-            aspect-ratio: 4/3;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 10px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-        }
-        
-        #ui {
-            position: relative;
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            z-index: 2000;
-            user-select: none;
-            pointer-events: auto;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 12px 20px;
-            border-radius: 0 0 8px 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-top: none;
-            flex-shrink: 0;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        .ui-row {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .ui-row-second {
-            gap: 25px;
-        }
-        
-        .ui-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .ui-label {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
-        
-        .ui-value {
-            font-size: 24px;
-            font-weight: 900;
-            color: #ffffff;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-        }
-        
-        #sideUi {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 2000;
-            user-select: none;
-            pointer-events: auto;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: center;
-            padding: 12px 15px;
-        }
-        
-        /* Menu Button in UI */
-        .menu-button-ui {
-            background: linear-gradient(135deg, #1099bb, #0d7a9a);
-            color: white;
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            padding: 8px 16px;
-            font-size: 11px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
-        }
-        
-        .menu-button-ui:hover {
-            background: linear-gradient(135deg, #0d7a9a, #1099bb);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.5);
-            border-color: rgba(0, 212, 255, 0.6);
-        }
-        
-        #sideMenu {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        
-        #sideMenu.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        .menu-popup-content {
-            background: linear-gradient(145deg, #0d1117 0%, #161b22 60%, #0d1117 100%);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85);
-            padding: 2.5em 3em;
-            border-radius: 15px;
-            text-align: center;
-            min-width: 350px;
-            max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-            transform: scale(0.8);
-            transition: transform 0.3s cubic-bezier(.68,-0.55,.27,1.55);
-            color: white;
-        }
-        
-        #sideMenu.show .menu-popup-content {
-            transform: scale(1);
-        }
-        
-        .menu-section {
-            margin-bottom: 30px;
-        }
-        
-        .menu-title {
-            font-size: 1.2em;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            color: #1099bb;
-            font-weight: bold;
-        }
-        
-        .setting-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        /* Toggle Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-        
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .slider {
-            background-color: #1099bb;
-        }
-        
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-        
-        /* Menu Button */
-        .menu-btn {
-            background-color: #1099bb;
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
-        
-        .menu-btn:hover {
-            background-color: #0d7a9a;
-        }
-        
-        /* Level Select Screen */
-        .level-screen-content {
-            max-width: 620px !important;
-            width: 92% !important;
-            max-height: 85vh;
-            overflow-y: auto;
-            position: relative;
-            background: linear-gradient(145deg, #0d1117 0%, #161b22 60%, #0d1117 100%) !important;
-            border: 1px solid rgba(0, 212, 255, 0.3) !important;
-            box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
-        }
-        
-        .level-screen-content h2 {
-            font-family: 'Exo 2', Arial, sans-serif;
-            font-weight: 900;
-            font-size: 1.8em;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            background: linear-gradient(90deg, #00d4ff, #a855f7, #00d4ff);
-            background-size: 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 3s linear infinite;
-            margin: 0.3em 0 0.2em;
-        }
-        
-        @keyframes shimmer {
-            0%   { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-        }
-        
-        .close-icon {
-            position: absolute;
-            top: 12px;
-            right: 15px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            font-size: 1.3em;
-            cursor: pointer;
-            color: #666;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .close-icon:hover {
-            background: rgba(244, 67, 54, 0.15);
-            border-color: #f44336;
-            color: #f44336;
-        }
-        
-        #levelGrid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            padding: 10px 20px 20px;
-            margin-bottom: 10px;
-        }
-        
-        /* Level Start Popup */
-        .level-start-content {
-            max-width: 420px;
-            text-align: center;
-            background: linear-gradient(145deg, #0d1117 0%, #161b22 100%) !important;
-            border: 1px solid rgba(0, 212, 255, 0.3) !important;
-            box-shadow: 0 0 40px rgba(0, 212, 255, 0.12), 0 20px 60px rgba(0,0,0,0.85) !important;
-        }
-        
-        .level-start-content h2 {
-            font-family: 'Exo 2', Arial, sans-serif;
-            font-size: 3em;
-            font-weight: 900;
-            margin-bottom: 0.1em;
-            color: #00d4ff;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            animation: levelGlow 2s ease-in-out infinite alternate;
-        }
-        
-        @keyframes levelGlow {
-            from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.2); }
-            to   { text-shadow: 0 0 25px rgba(0, 212, 255, 1),   0 0 50px rgba(0, 212, 255, 0.5), 0 0 80px rgba(0, 212, 255, 0.2); }
-        }
-        
-        .level-start-content p {
-            font-family: 'Exo 2', Arial, sans-serif;
-            font-size: 0.9em;
-            font-weight: 600;
-            color: #8892a4;
-            margin-bottom: 1.8em;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-        }
-        
-        .popup-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .confirm-btn {
-            padding: 0.75em 1.8em;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: 'Exo 2', Arial, sans-serif;
-            font-size: 0.9em;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-            color: white;
-        }
-        
-        .confirm-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-        }
-        
-        .yes-btn {
-            background: linear-gradient(135deg, #00b894, #00d4ff);
-            box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
-        }
-        
-        .no-btn {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
-        }
-        
-        .level-item {
-            aspect-ratio: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 2px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 10px;
-            font-family: 'Exo 2', Arial, sans-serif;
-            font-size: 1em;
-            font-weight: 700;
-            color: rgba(255,255,255,0.18);
-            cursor: not-allowed;
-            transition: all 0.2s ease;
-        }
-        
-        .level-item .level-icon {
-            font-size: 0.7em;
-            line-height: 1;
-            opacity: 0.85;
-        }
-        
-        .level-unlocked {
-            cursor: pointer;
-            background: rgba(0, 212, 255, 0.05);
-            color: #c9d1d9;
-            border-color: rgba(0, 212, 255, 0.3);
-        }
-        
-        .level-unlocked:hover {
-            transform: scale(1.08) translateY(-2px);
-            background: rgba(0, 212, 255, 0.14);
-            border-color: rgba(0, 212, 255, 0.8);
-            box-shadow: 0 0 18px rgba(0, 212, 255, 0.35), 0 6px 20px rgba(0,0,0,0.4);
-            color: #fff;
-        }
-        
-        .level-completed {
-            background: rgba(255, 215, 0, 0.07);
-            color: #ffd700;
-            border-color: rgba(255, 215, 0, 0.35);
-        }
-        
-        .level-completed:hover {
-            background: rgba(255, 215, 0, 0.16);
-            border-color: rgba(255, 215, 0, 0.75);
-            box-shadow: 0 0 18px rgba(255, 215, 0, 0.3), 0 6px 20px rgba(0,0,0,0.4);
-        }
-        
-        .level-current {
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.15));
-            color: #fff;
-            border-color: #00d4ff;
-            animation: currentPulse 1.8s ease-in-out infinite;
-        }
-        
-        @keyframes currentPulse {
-            0%, 100% { box-shadow: 0 0 14px rgba(0, 212, 255, 0.45), 0 0 28px rgba(0, 212, 255, 0.15); }
-            50%       { box-shadow: 0 0 24px rgba(0, 212, 255, 0.85), 0 0 48px rgba(0, 212, 255, 0.35); }
-        }
-        
-        .level-locked {
-            opacity: 0.35;
-            background: rgba(255,255,255,0.01);
-            border-color: rgba(255,255,255,0.05);
-        }
-        
-        /* Game Info */
-        .game-info-text {
-            font-size: 0.82em;
-            color: #9aa3b0;
-            text-align: left;
-            line-height: 1.65;
-            margin: 0 0 8px;
-        }
-
-        .powerup-list {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            margin-top: 4px;
-        }
-
-        .powerup-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.81em;
-            color: #c9d1d9;
-            text-align: left;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 6px;
-            padding: 6px 10px;
-        }
-
-        .pu-icon {
-            font-size: 1.1em;
-            min-width: 22px;
-            text-align: center;
-        }
-
-        /* History List */
-        #historyList {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .history-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9em;
-        }
-        
-        .history-win {
-            border-left: 3px solid #4caf50;
-        }
-        
-        .history-loss {
-            border-left: 3px solid #f44336;
-        }
-        
-        /* Responsive font sizing */
-        @media (max-width: 768px) {
-            #ui {
-                font-size: 16px;
-                top: 10px;
-                left: 50%;
-                transform: translateX(-50%);
-                gap: 10px;
-                padding: 10px 15px;
-            }
-            
-            .ui-row {
-                gap: 15px;
-            }
-            
-            .ui-row-second {
-                gap: 20px;
-            }
-            
-            #sideUi {
-                font-size: 14px;
-                top: 10px;
-                right: 10px;
-                gap: 10px;
-                padding: 10px 12px;
-            }
-            
-            .ui-value {
-                font-size: 20px;
-            }
-            
-            .ui-label {
-                font-size: 11px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            #ui {
-                font-size: 14px;
-                top: 8px;
-                left: 50%;
-                transform: translateX(-50%);
-                gap: 8px;
-                padding: 8px 12px;
-            }
-            
-            .ui-row {
-                gap: 12px;
-            }
-            
-            .ui-row-second {
-                gap: 15px;
-            }
-            
-            #sideUi {
-                font-size: 12px;
-                top: 8px;
-                right: 8px;
-                gap: 8px;
-                padding: 8px 10px;
-            }
-            
-            .ui-value {
-                font-size: 18px;
-            }
-            
-            .ui-label {
-                font-size: 10px;
-            }
-        }
-        
-        /* Exit button styling */
-        .exit-button {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 0.5em 1em;
-            font-size: 0.9em;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 0.5em;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: bold;
-            pointer-events: auto;
-            position: relative;
-            z-index: 2001;
-        }
-        
-        .exit-button:hover {
-            background-color: #c82333;
-            transform: translateY(-1px);
-        }
-        
-        .exit-button:active {
-            transform: translateY(0);
-        }
-        
-        @media (max-width: 768px) {
-            .exit-button {
-                font-size: 0.8em;
-                padding: 0.4em 0.8em;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .exit-button {
-                font-size: 0.7em;
-                padding: 0.3em 0.6em;
-            }
-        }
-
-
-        /* Portrait mobile: remove fixed aspect ratio so JS can set a taller canvas */
-        @media (max-width: 768px) and (orientation: portrait) {
-            body {
-                justify-content: flex-start;
-            }
-
-            #gameContainer {
-                aspect-ratio: auto;
-                width: 100%;
-                max-width: 100vw;
-                max-height: none;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-                border-bottom: none;
-            }
-        }
-
-        /* Ensure canvas scales properly */
-        canvas {
-            max-width: 100%;
-            max-height: 100%;
-            display: block;
-            touch-action: none; /* Prevent scrolling and improve touch responsiveness */
-            user-select: none; /* Prevent text selection */
-            -webkit-user-select: none;
-            -webkit-touch-callout: none; /* Disable callout on iOS */
-        }
-    </style>
 </head>
-<body>
-    <div id="ui">
-        <div class="ui-row">
-            <div class="ui-item">
-                <div class="ui-label">Score</div>
-                <div class="ui-value" id="score">0</div>
-            </div>
-            <div class="ui-item">
-                <div class="ui-label">High Score</div>
-                <div class="ui-value" id="highScore">0</div>
-            </div>
-            <div class="ui-item">
-                <div class="ui-label">Timer</div>
-                <div class="ui-value" id="timer">0:00</div>
-            </div>
-            <div class="ui-item">
-                <div class="ui-label">Level</div>
-                <div class="ui-value" id="level">1</div>
-            </div>
-        </div>
-        <div class="ui-row ui-row-second">
-            <div class="ui-item">
-                <div class="ui-label">Lives</div>
-                <div class="ui-value" id="lives">3</div>
-            </div>
-            <div class="ui-item">
-                <div class="ui-label">Player</div>
-                <div class="ui-value" id="username"></div>
-            </div>
-            <button id="exitBtn" class="exit-button">Exit Game</button>
-        </div>
-        <div class="ui-row ui-row-third">
-            <button id="menuBtn" class="menu-button-ui">Menu</button>
-        </div>
+<body data-theme="dusk">
+    <div class="scene" aria-hidden="true">
+        <div class="scene-stars"></div>
+        <div class="scene-sea"></div>
     </div>
-    
-    <div id="sideUi">
-    </div>
-    
-    <div id="sideMenu">
-        <div class="menu-popup-content">
-            <button id="closeMenuIcon" class="close-icon">&times;</button>
-            <div class="menu-section">
-                <div class="menu-title">Settings</div>
-                <div class="setting-row">
-                    <span>Music</span>
-                    <label class="switch">
-                        <input type="checkbox" id="musicToggle" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="setting-row">
-                    <span>Sound Effects</span>
-                    <label class="switch">
-                        <input type="checkbox" id="soundToggle" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="setting-row">
-                    <span>Night Mode</span>
-                    <label class="switch">
-                        <input type="checkbox" id="bgToggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="menu-section">
-                <div class="menu-title">How to Play</div>
-                <p class="game-info-text">Break all the bricks before time runs out to advance to the next level. Each level the ball gets faster, the rows increase, and you have less time. Collect falling power-ups with your paddle!</p>
-                <p class="game-info-text"><strong style="color:#00d4ff">30 levels</strong> — unlock and replay any level you've cleared.</p>
-            </div>
 
-            <div class="menu-section">
-                <div class="menu-title">Power-Ups</div>
-                <div class="powerup-list">
-                    <div class="powerup-item"><span class="pu-icon">⭐</span><div><strong>BIG</strong> — Paddle grows 1.5× for 10s</div></div>
-                    <div class="powerup-item"><span class="pu-icon">⭐</span><div><strong>SMALL</strong> — Paddle shrinks for 10s (watch out!)</div></div>
-                    <div class="powerup-item"><span class="pu-icon">🧪</span><div><strong>FAST</strong> — Ball speeds up 1.5× for 10s</div></div>
-                    <div class="powerup-item"><span class="pu-icon">🧪</span><div><strong>SLOW</strong> — Ball slows down 1.5× for 10s</div></div>
-                    <div class="powerup-item"><span class="pu-icon">🪙</span><div><strong>ZAP</strong> — Lightning destroys 4 random bricks</div></div>
-                    <div class="powerup-item"><span class="pu-icon">❓</span><div><strong>???</strong> — Mystery: activates a random power-up</div></div>
-                    <div class="powerup-item"><span class="pu-icon">❤️</span><div><strong>+LIFE</strong> — Gain an extra life (up to 9)</div></div>
-                    <div class="powerup-item"><span class="pu-icon">➕</span><div><strong>+30s</strong> — Adds 30 seconds to the timer</div></div>
+    <main class="cabinet">
+        <header id="ui" class="hud">
+            <div class="hud-block hud-player">
+                <span class="hud-label">1UP</span>
+                <span class="hud-value" id="username">---</span>
+            </div>
+            <div class="hud-block">
+                <span class="hud-label">Score</span>
+                <span class="hud-value" id="score">000000</span>
+            </div>
+            <div class="hud-block hud-hi">
+                <span class="hud-label">Hi-Score</span>
+                <span class="hud-value" id="highScore">000000</span>
+            </div>
+            <div class="hud-block">
+                <span class="hud-label">Stage</span>
+                <span class="hud-value" id="level">01</span>
+            </div>
+            <div class="hud-block hud-time">
+                <span class="hud-label">Time <span class="hud-bonus" id="bankTime" title="Banked bonus time"></span></span>
+                <span class="hud-value" id="timer">2:00</span>
+                <span class="time-bar"><span id="timerBar"></span></span>
+            </div>
+            <div class="hud-block">
+                <span class="hud-label">Lives <span class="hud-bonus hud-bonus-life" id="bankLives" title="Banked bonus lives"></span></span>
+                <span class="hud-value hud-lives" id="lives"></span>
+            </div>
+            <div class="hud-actions">
+                <button id="menuBtn" class="icon-btn" type="button" aria-label="Pause and open menu">
+                    <span class="icon-pause" aria-hidden="true"></span>
+                </button>
+                <button id="exitBtn" class="icon-btn icon-btn-danger" type="button" aria-label="Quit to title" style="display:none">
+                    <span aria-hidden="true">✕</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="screen">
+            <div id="gameContainer"></div>
+        </section>
+
+        <footer id="dashboard" class="dashboard" aria-label="Dashboard">
+            <div class="dash-gauge">
+                <svg class="gauge" viewBox="0 0 100 62" aria-hidden="true">
+                    <path class="gauge-track" d="M12 56 A38 38 0 0 1 88 56" pathLength="100" />
+                    <path id="dashSpeedArc" class="gauge-fill" d="M12 56 A38 38 0 0 1 88 56" pathLength="100" />
+                    <line id="dashSpeedNeedle" class="gauge-needle" x1="50" y1="56" x2="50" y2="24" />
+                    <circle class="gauge-hub" cx="50" cy="56" r="4" />
+                </svg>
+                <div class="dash-readout">
+                    <span id="dashSpeed">000</span>
+                    <small>km/h</small>
                 </div>
             </div>
 
-            <div class="menu-section">
-                <div class="menu-title">Level Progress</div>
-                <button id="levelSelectBtn" class="menu-btn">Select Level</button>
+            <div class="dash-lights">
+                <div class="dash-light" data-type="paddle_big" style="--light:#3df5a7">
+                    <span class="dash-ring"><span class="pu-sprite" style="--row:8"></span></span>
+                    <span class="dash-light-label">BIG</span>
+                    <span class="dash-light-time">--</span>
+                </div>
+                <div class="dash-light" data-type="paddle_small" style="--light:#ff4d4d">
+                    <span class="dash-ring"><span class="pu-sprite" style="--row:2"></span></span>
+                    <span class="dash-light-label">SMALL</span>
+                    <span class="dash-light-time">--</span>
+                </div>
+                <div class="dash-light" data-type="speed_fast" style="--light:#ffb11a">
+                    <span class="dash-ring"><span class="pu-sprite" style="--row:10"></span></span>
+                    <span class="dash-light-label">FAST</span>
+                    <span class="dash-light-time">--</span>
+                </div>
+                <div class="dash-light" data-type="speed_slow" style="--light:#4cc9ff">
+                    <span class="dash-ring"><span class="pu-sprite" style="--row:9"></span></span>
+                    <span class="dash-light-label">SLOW</span>
+                    <span class="dash-light-time">--</span>
+                </div>
             </div>
-            
-            <div class="menu-section">
-                <div class="menu-title">Game History</div>
-                <ul id="historyList">
-                    <!-- History items will be added here -->
-                </ul>
+
+            <div class="dash-meters">
+                <div class="dash-meter">
+                    <span class="dash-meter-label">Combo</span>
+                    <span class="dash-meter-value" id="dashCombo">x1</span>
+                    <span class="dash-leds" id="dashComboLeds"><i></i><i></i><i></i></span>
+                    <span class="dash-chain" id="dashChain">0 hits</span>
+                </div>
+                <div class="dash-meter">
+                    <span class="dash-meter-label">Balls</span>
+                    <span class="dash-meter-value" id="dashBalls">1</span>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <div id="usernamePopup" class="popup show title-screen">
+        <div class="popup-content title-card">
+            <div class="logo">
+                <span class="logo-top">Neon</span>
+                <span class="logo-main" data-text="BREAKOUT">BREAKOUT</span>
+                <span class="logo-tag">Retro arcade &middot; 30 stages</span>
+            </div>
+
+            <div class="title-hiscore">Hi-Score <span id="titleHighScore">000000</span></div>
+
+            <label class="name-field" for="usernameInput">
+                <span>Enter your name</span>
+                <input type="text" id="usernameInput" placeholder="AAA" maxlength="12" autocomplete="off" spellcheck="false" />
+            </label>
+            <div id="usernameError" class="username-error" role="alert">Every legend needs a name.</div>
+
+            <button id="startGameBtn" class="btn btn-primary btn-xl" type="button">Press Start</button>
+
+            <ul class="controls-hint">
+                <li><kbd>Mouse</kbd><kbd>←</kbd><kbd>→</kbd> Move</li>
+                <li><kbd>Click</kbd><kbd>Space</kbd> Launch</li>
+                <li><kbd>Esc</kbd> Pause</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="levelStartPopup" class="popup">
+        <div class="popup-content panel level-start-content">
+            <p class="panel-kicker">Get ready</p>
+            <h2 id="levelStartTitle">Stage 01</h2>
+            <div id="levelStartInfo" class="stat-row"></div>
+            <div id="levelStartRewards" class="reward-row"></div>
+            <div id="levelStartBank" class="bonus-bank" hidden>
+                <div class="reward-row">
+                    <span class="reward-title">Bonus bank</span>
+                    <span id="bonusBankChips" class="bonus-bank-chips"></span>
+                </div>
+                <label class="setting-row bonus-toggle">
+                    <span>Use bonus this stage</span>
+                    <span class="switch"><input type="checkbox" id="useBonusToggle" checked><span class="slider"></span></span>
+                </label>
+            </div>
+            <div class="popup-buttons">
+                <button id="levelStartPlayBtn" class="btn btn-primary" type="button">Start</button>
+                <button id="levelStartSelectBtn" class="btn btn-secondary" type="button">Select Stage</button>
             </div>
         </div>
     </div>
 
-    <div id="gameContainer"></div>
-    <!-- Username popup -->
-    <div id="usernamePopup" class="popup show">
-        <div class="popup-content">
-            <h2>Welcome to Breakout!</h2>
-            <p>Please enter your username:</p>
-            <input type="text" id="usernameInput" placeholder="Enter your username" maxlength="20" />
-            <div id="usernameError" class="username-error">Please enter a username!</div>
-            <button id="startGameBtn">Start Game</button>
-        </div>
-    </div>
-    
-    <!-- Popup overlay -->
     <div id="gamePopup" class="popup">
-        <div class="popup-content">
+        <div class="popup-content panel result-panel">
             <h2 id="popupTitle"></h2>
             <p id="popupMessage"></p>
-            <button id="popupOkBtn">OK</button>
+            <div id="popupStats" class="stat-row result-stats"></div>
+            <div id="popupActions" class="popup-buttons"></div>
         </div>
     </div>
 
-    <!-- Exit Confirmation Popup -->
     <div id="exitConfirmPopup" class="popup">
-        <div class="popup-content">
-            <h2>Exit Game?</h2>
-            <p>Are you sure you want to exit? Your progress will be lost.</p>
+        <div class="popup-content panel" data-tone="danger">
+            <h2>Quit Game?</h2>
+            <p>Your current run will be lost.</p>
             <div class="popup-buttons">
-                <button id="exitConfirmYesBtn" class="confirm-btn yes-btn">Yes, Exit</button>
-                <button id="exitConfirmNoBtn" class="confirm-btn no-btn">Cancel</button>
+                <button id="exitConfirmYesBtn" class="btn btn-danger" type="button">Quit</button>
+                <button id="exitConfirmNoBtn" class="btn btn-secondary" type="button">Keep Playing</button>
             </div>
         </div>
     </div>
-    <!-- Level Select Screen -->
+
     <div id="levelSelectScreen" class="popup">
-        <div class="popup-content level-screen-content">
-            <button id="closeLevelSelectIcon" class="close-icon">&times;</button>
-            <h2>Select Level</h2>
-            <div id="levelGrid">
-                <!-- Levels will be generated here -->
-            </div>
+        <div class="popup-content panel level-screen-content">
+            <button id="closeLevelSelectIcon" class="close-icon" type="button" aria-label="Close">&times;</button>
+            <p class="panel-kicker">Stage select</p>
+            <h2>Choose your stage</h2>
+            <div id="levelGrid"></div>
+            <h3 class="boss-grid-title">Boss fights</h3>
+            <div id="bossGrid" class="boss-grid"></div>
         </div>
     </div>
 
-    <!-- Level Start Popup -->
-    <div id="levelStartPopup" class="popup">
-        <div class="popup-content level-start-content">
-            <h2 id="levelStartTitle">Level 1</h2>
-            <p>Get Ready!</p>
-            <div class="popup-buttons">
-                <button id="levelStartPlayBtn" class="confirm-btn yes-btn">Start Game</button>
-                <button id="levelStartSelectBtn" class="confirm-btn no-btn">Select Level</button>
+    <div id="sideMenu" class="popup">
+        <div class="popup-content panel menu-popup-content">
+            <button id="closeMenuIcon" class="close-icon" type="button" aria-label="Close menu">&times;</button>
+            <p class="panel-kicker">Game paused</p>
+            <h2>Menu</h2>
+
+            <div class="menu-actions">
+                <button id="resumeBtn" class="btn btn-primary btn-block" type="button">Resume</button>
+                <button id="levelSelectBtn" class="btn btn-secondary btn-block" type="button">Select Stage</button>
             </div>
+
+            <section class="menu-section">
+                <h3 class="menu-title">Settings</h3>
+                <label class="setting-row">
+                    <span>Music</span>
+                    <span class="switch"><input type="checkbox" id="musicToggle" checked><span class="slider"></span></span>
+                </label>
+                <label class="setting-row">
+                    <span>Sound effects</span>
+                    <span class="switch"><input type="checkbox" id="soundToggle" checked><span class="slider"></span></span>
+                </label>
+                <label class="setting-row">
+                    <span>Midnight theme</span>
+                    <span class="switch"><input type="checkbox" id="bgToggle"><span class="slider"></span></span>
+                </label>
+            </section>
+
+            <section class="menu-section">
+                <h3 class="menu-title">How to play</h3>
+                <p class="game-info-text">Smash every brick before the clock runs out. The ball waits on your paddle until you launch it, and the clock starts on your first launch. Each stage gets faster, with more rows and less time.</p>
+                <p class="game-info-text">Hit bricks back-to-back without touching the paddle to build a <strong>combo</strong>. Every 3 hits in a row raise your score multiplier (watch the COMBO meter on the dashboard), up to <strong>x8</strong>. Bricks with rivets are <strong>armored</strong> and take more than one hit. Every stage you clear puts <strong>+1 life</strong> and your <strong>leftover time</strong> into your <strong>bonus bank</strong>. Banked time is capped at <strong>10 minutes</strong>. It is saved, and you can spend it on any stage you pick from the Get Ready screen, or keep it for later.</p>
+                <p class="game-info-text">After stages <strong>15</strong> and <strong>30</strong> an alien <strong>boss</strong> attacks. Hit it with the ball until its hull hits zero, and dodge its red plasma shots: each one that reaches your paddle costs a life.</p>
+            </section>
+
+            <section class="menu-section">
+                <h3 class="menu-title">Power-ups</h3>
+                <ul class="powerup-list">
+                    <li class="powerup-item"><span class="pu-sprite" style="--row:8"></span><div><strong>BIG</strong> Paddle grows 1.5x for 10s</div></li>
+                    <li class="powerup-item is-negative"><span class="pu-sprite" style="--row:2"></span><div><strong>SMALL</strong> Paddle shrinks for 10s</div></li>
+                    <li class="powerup-item is-negative"><span class="pu-sprite" style="--row:10"></span><div><strong>FAST</strong> Ball speeds up 1.5x for 10s</div></li>
+                    <li class="powerup-item"><span class="pu-sprite" style="--row:9"></span><div><strong>SLOW</strong> Ball slows down for 10s</div></li>
+                    <li class="powerup-item"><span class="pu-sprite" style="--row:0"></span><div><strong>ZAP</strong> Lightning destroys 4 bricks</div></li>
+                    <li class="powerup-item"><span class="pu-sprite" style="--row:5"></span><div><strong>MULTI</strong> Splits every ball into three</div></li>
+                    <li class="powerup-item"><span class="pu-sprite" style="--row:3"></span><div><strong>???</strong> Mystery: a random power-up</div></li>
+                    <li class="powerup-item"><span class="pu-sprite" style="--row:1"></span><div><strong>+1UP</strong> Extra life (max 10)</div></li>
+                    <li class="powerup-item"><span class="pu-sprite" style="--row:4"></span><div><strong>+30s</strong> Adds 30 seconds to the clock</div></li>
+                </ul>
+            </section>
+
+            <section class="menu-section">
+                <h3 class="menu-title">Recent games</h3>
+                <ul id="historyList"></ul>
+            </section>
         </div>
     </div>
-    
-    <script type="module">
-        import { BreakoutGame } from './src/game.ts';
-        
-        console.log('Script module started');
-        const game = new BreakoutGame();
-        
-        const startGameBtn = document.getElementById('startGameBtn');
-        const usernameInput = document.getElementById('usernameInput');
-        function startGame() {
-            const username = usernameInput.value.trim();
-            if (username) {
-                game.username = username;
-                const usernamePopup = document.getElementById('usernamePopup');
-                if (usernamePopup) {
-                    usernamePopup.classList.remove('show');
-                }
-                game.gameState = 'playing';
-                if (game.app && game.app.ticker) {
-                    game.app.ticker.start();
-                }    
-                game.initializeGame();
-                game.updateUI(); 
-            } else {
-                document.getElementById('usernameError')?.classList.add('show');
-            }
-        }
-        if (usernameInput) {
-            usernameInput.addEventListener('input', () => {
-                document.getElementById('usernameError')?.classList.remove('show');
-            });
-        }
-        if (startGameBtn) {
-            startGameBtn.addEventListener('click', startGame);
-        }
-        if (usernameInput) {
-            usernameInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    startGame();
-                }
-            });
-        }
-        const exitBtn = document.getElementById('exitBtn');
-        const exitConfirmPopup = document.getElementById('exitConfirmPopup');
-        const exitConfirmYesBtn = document.getElementById('exitConfirmYesBtn');
-        const exitConfirmNoBtn = document.getElementById('exitConfirmNoBtn');
 
-        if (exitBtn && exitConfirmPopup && exitConfirmYesBtn && exitConfirmNoBtn) {
-            exitBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Pause the game when exit button is clicked
-                game.pause();
-                exitConfirmPopup.classList.add('show');
-            });
-
-            // Handle Yes click
-            exitConfirmYesBtn.addEventListener('click', () => {
-                exitConfirmPopup.classList.remove('show');
-                
-                if (game.app && game.app.ticker) {
-                    game.app.ticker.stop();
-                }
-                
-                // Reset game state
-                game.gameState = 'start';
-                game.score = 0;
-                game.lives = 3;
-                
-                // Show the username popup again
-                const usernamePopup = document.getElementById('usernamePopup');
-                if (usernamePopup) {
-                    usernamePopup.classList.remove('hide');
-                    usernamePopup.classList.add('show');
-                }
-                
-                // Reset the game
-                game.resetGame();
-                
-                // Force state back to start
-                game.gameState = 'start';
-                
-                // Update UI to hide exit button
-                game.updateUI();
-            });
-
-            // Handle No click
-            exitConfirmNoBtn.addEventListener('click', () => {
-                exitConfirmPopup.classList.remove('show');
-                // Resume the game when user cancels exit
-                game.resume();
-            });
-        } else if (!exitBtn) {
-            console.error('CRITICAL: Exit button not found in DOM');
-        }
-
-        // Menu Logic
-        const menuBtn = document.getElementById('menuBtn');
-        const sideMenu = document.getElementById('sideMenu');
-        const closeMenuIcon = document.getElementById('closeMenuIcon');
-        const musicToggle = document.getElementById('musicToggle');
-        const soundToggle = document.getElementById('soundToggle');
-
-        if (menuBtn && sideMenu) {
-            menuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sideMenu.classList.toggle('show');
-                if (sideMenu.classList.contains('show')) {
-                    game.pause(); 
-                } else {
-                    game.resume();
-                }
-            });
-
-            // Close menu when clicking outside or on close icon
-            const closeMenu = () => {
-                sideMenu.classList.remove('show');
-                game.resume();
-            };
-
-            if (closeMenuIcon) {
-                closeMenuIcon.addEventListener('click', closeMenu);
-            }
-
-            document.addEventListener('click', (e) => {
-                if (sideMenu.classList.contains('show') && 
-                    !sideMenu.querySelector('.menu-popup-content').contains(e.target) && 
-                    e.target !== menuBtn) {
-                    closeMenu();
-                }
-            });
-        }
-
-        if (musicToggle) {
-            musicToggle.checked = game.musicEnabled; 
-            musicToggle.addEventListener('change', (e) => {
-                game.toggleMusic(e.target.checked);
-            });
-        }
-
-        if (soundToggle) {
-            soundToggle.checked = game.soundEnabled;
-            soundToggle.addEventListener('change', (e) => {
-                game.toggleSound(e.target.checked);
-            });
-        }
-
-        const bgToggle = document.getElementById('bgToggle');
-        if (bgToggle) {
-            bgToggle.checked = game.backgroundType === 'night';
-            bgToggle.addEventListener('change', (e) => {
-                game.setBackground(e.target.checked ? 'night' : 'morning');
-            });
-        }
-        
-        // Level Select Logic
-        const levelSelectBtn = document.getElementById('levelSelectBtn');
-        const levelSelectScreen = document.getElementById('levelSelectScreen');
-        const closeLevelSelectIcon = document.getElementById('closeLevelSelectIcon');
-        
-        if (levelSelectBtn && levelSelectScreen && closeLevelSelectIcon) {
-            levelSelectBtn.addEventListener('click', () => {
-                game.openLevelSelect();
-            });
-            
-            closeLevelSelectIcon.addEventListener('click', () => {
-                game.closeLevelSelect();
-            });
-        }
-
-        // Start the game initialization
-        try {
-            await game.start();
-            console.log('Game initialized successfully');
-        } catch (err) {
-            console.error('Failed to start game:', err);
-        }
-    </script>
+    <script type="module" src="./src/main.ts"></script>
 </body>
-<style>
-    .popup {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 3000; /* Ensure popups are above side menu and UI */
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-    }
-    
-    /* Ensure critical popups are even higher */
-    #gamePopup { z-index: 3100; }
-    #exitConfirmPopup { z-index: 3200; }
-    
-    .popup.show {
-        transition: ease-in-out 0.4s;
-        opacity: 1;
-        pointer-events: auto;
-    }
-    .popup-content {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid #e9ecef;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        padding: 2.5em 3em;
-        border-radius: 15px;
-        text-align: center;
-        min-width: 350px;
-        transform: scale(0.8);
-        transition: transform 0.3s cubic-bezier(.68,-0.55,.27,1.55);
-    }
-    .popup.show .popup-content {
-        transform: scale(1);
-    }
-    #popupOkBtn {
-        margin-top: 1em;
-        padding: 0.8em 2em;
-        font-size: 1.1em;
-        border-radius: 5px;
-        border: none;
-        background: #1099bb;
-        color: #fff;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-        font-weight: bold;
-        letter-spacing: 0.5px;
-    }
-    
-    #popupOkBtn:hover {
-        background-color: #0d7a9a;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    
-    #popupOkBtn:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    #startGameBtn{
-        background-color: #1099bb;   
-        color: white;
-        border: none;
-        padding: 0.8em 2em;
-        font-size: 1.1em;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-top: 1em;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-        font-weight: bold;
-        letter-spacing: 0.5px;
-    }
-    
-    #startGameBtn:hover {
-        background-color: #0d7a9a;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    
-    #startGameBtn:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
-    #usernameInput {
-        width: 100%;
-        padding: 0.8em;
-        font-size: 1em;
-        border: 2px solid #ddd;
-        border-radius: 5px;
-        margin: 1em 0;
-        box-sizing: border-box;
-        transition: border-color 0.3s ease;
-        text-align: center;
-    }
-    
-    #usernameInput:focus {
-        outline: none;
-        border-color: #1099bb;
-        box-shadow: 0 0 0 3px rgba(16, 153, 187, 0.1);
-    }
-    
-    /* Responsive popup styles */
-    @media (max-width: 768px) {
-        .popup-content {
-            padding: 2em 2.5em;
-            min-width: 300px;
-            width: 90vw;
-            max-width: 400px;
-        }
-        
-        #usernameInput {
-            font-size: 0.9em;
-            padding: 0.7em;
-        }
-        
-        #startGameBtn {
-            padding: 0.7em 1.5em;
-            font-size: 1em;
-        }
-        
-        #popupOkBtn {
-            padding: 0.7em 1.5em;
-            font-size: 1em;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .popup-content {
-            padding: 1.5em 2em;
-            min-width: 280px;
-            width: 95vw;
-            max-width: 350px;
-        }
-        
-        #usernameInput {
-            font-size: 0.85em;
-            padding: 0.6em;
-        }
-        
-        #startGameBtn {
-            padding: 0.6em 1.2em;
-            font-size: 0.9em;
-        }
-        
-        #popupOkBtn {
-            padding: 0.6em 1.2em;
-            font-size: 0.9em;
-        }
-        
-        .difficulty-select {
-            font-size: 0.85em;
-            padding: 0.6em;
-        }
-    }
-    
-    #usernameInput::placeholder {
-        color: #999;
-        font-style: italic;
-    }
-
-    .username-error {
-        display: none;
-        color: #e74c3c;
-        background: rgba(231, 76, 60, 0.1);
-        border: 1px solid rgba(231, 76, 60, 0.4);
-        border-radius: 6px;
-        padding: 0.4em 0.8em;
-        font-size: 0.85em;
-        font-weight: 600;
-        margin-top: 0.3em;
-        width: 100%;
-        box-sizing: border-box;
-        text-align: center;
-    }
-
-    .username-error.show {
-        display: block;
-    }
-    
-    #usernamePopup .popup-content {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid #e9ecef;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        border-radius: 15px;
-        padding: 2.5em 3em;
-        min-width: 350px;
-        text-align: center;
-    }
-    
-    #usernamePopup h2 {
-        color: #2c3e50;
-        margin-bottom: 0.5em;
-        font-size: 1.8em;
-        font-weight: 700;
-    }
-    
-    #usernamePopup p {
-        color: #6c757d;
-        margin-bottom: 1.5em;
-        font-size: 1.1em;
-        line-height: 1.4;
-    }
-    
-    /* Difficulty dropdown styling */
-    .difficulty-select {
-        width: 100%;
-        padding: 0.8em;
-        font-size: 1em;
-        border: 2px solid #ddd;
-        border-radius: 5px;
-        margin: 1em 0;
-        box-sizing: border-box;
-        background: #f8f9fa;
-        color: #495057;
-        cursor: pointer;
-        transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        text-align: center;
-        font-weight: 500;
-    }
-    
-    .difficulty-select:focus {
-        outline: none;
-        border-color: #1099bb;
-        box-shadow: 0 0 0 3px rgba(16, 153, 187, 0.1);
-    }
-    
-    .difficulty-select option {
-        padding: 0.5em;
-        background: white;
-        color: #495057;
-    }
-    
-    .difficulty-select option[value="easy"] {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .difficulty-select option[value="medium"] {
-        background: #fff3cd;
-        color: #856404;
-    }
-    
-    .difficulty-select option[value="hard"] {
-        background: #f8d7da;
-        color: #721c24;
-    }
-
-    /* Confirmation Popup Buttons */
-    .popup-buttons {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        margin-top: 1.5em;
-    }
-
-    .confirm-btn {
-        padding: 0.75em 1.8em;
-        font-size: 0.9em;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        font-family: 'Exo 2', Arial, sans-serif;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.2s ease;
-        color: white;
-    }
-
-    .confirm-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    }
-
-    .confirm-btn:active {
-        transform: translateY(0);
-    }
-
-    .yes-btn {
-        background: linear-gradient(135deg, #00b894, #00d4ff);
-        box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
-    }
-
-    .yes-btn:hover {
-        background: linear-gradient(135deg, #00a381, #00b8e0);
-    }
-
-    .no-btn {
-        background: linear-gradient(135deg, #7c3aed, #a855f7);
-        box-shadow: 0 0 12px rgba(124, 58, 237, 0.25);
-    }
-
-    .no-btn:hover {
-        background: linear-gradient(135deg, #6d28d9, #9333ea);
-    }
-
-    #exitConfirmYesBtn {
-        background: linear-gradient(135deg, #dc3545, #c82333);
-        box-shadow: 0 0 12px rgba(220, 53, 69, 0.3);
-    }
-
-    #exitConfirmYesBtn:hover {
-        background: linear-gradient(135deg, #c82333, #b01e2b);
-    }
-</style>
 </html>
