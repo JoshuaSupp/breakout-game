@@ -81,7 +81,6 @@ input {
     font: inherit;
 }
 
-/* Scene */
 
 .scene {
     position: fixed;
@@ -141,7 +140,6 @@ input {
     animation: sea-drift 3s linear infinite;
 }
 
-/* Cabinet + HUD */
 
 .cabinet {
     position: relative;
@@ -307,7 +305,6 @@ input {
     border-right: 4px solid currentColor;
 }
 
-/* Game screen */
 
 .screen {
     position: relative;
@@ -355,7 +352,6 @@ canvas {
     -webkit-touch-callout: none;
 }
 
-/* Power-up sprites + tray */
 
 .pu-sprite {
     --px: 32px;
@@ -370,7 +366,6 @@ canvas {
     image-rendering: pixelated;
 }
 
-/* Dashboard */
 
 .dashboard {
     position: relative;
@@ -600,7 +595,6 @@ canvas {
     to { transform: scale(1); }
 }
 
-/* Popups */
 
 .popup {
     position: fixed;
@@ -876,7 +870,6 @@ canvas {
     to { transform: none; opacity: 1; }
 }
 
-/* Buttons */
 
 .btn {
     position: relative;
@@ -957,7 +950,6 @@ canvas {
     flex: 1 1 140px;
 }
 
-/* Title screen */
 
 .title-screen {
     background: radial-gradient(ellipse at center, rgba(7, 1, 26, 0.3), rgba(7, 1, 26, 0.85));
@@ -1152,7 +1144,6 @@ kbd {
     animation: blink 1.2s steps(2) infinite;
 }
 
-/* Stage start + select */
 
 .level-start-content h2 {
     font-size: clamp(24px, 6vw, 34px);
@@ -1257,7 +1248,6 @@ kbd {
     box-shadow: 0 0 10px rgba(255, 59, 59, 0.6);
 }
 
-/* Menu */
 
 .menu-popup-content {
     width: min(460px, 100%);
@@ -1527,7 +1517,6 @@ kbd {
     color: var(--dim);
 }
 
-/* Animations */
 
 @keyframes blink {
     0%, 100% { opacity: 1; }
@@ -1579,7 +1568,6 @@ kbd {
     75% { transform: translateX(6px); }
 }
 
-/* Responsive */
 
 @media (max-width: 768px) {
     body {

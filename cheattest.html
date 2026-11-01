@@ -19,7 +19,6 @@
             overflow: hidden;
         }
 
-        /* ── Cheat panel ─────────────────────────────────── */
         #cheatPanel {
             width: 100%;
             background: linear-gradient(90deg, #7c3aed, #a855f7);
@@ -99,7 +98,6 @@
         }
         #jumpBtn:hover { background: #e8d5ff; }
 
-        /* ── Game UI header ──────────────────────────────── */
         #ui {
             position: relative;
             color: white;
@@ -139,7 +137,6 @@
             letter-spacing: 0.5px; font-family: 'Exo 2', Arial, sans-serif;
         }
 
-        /* ── Game canvas container ───────────────────────── */
         #gameContainer {
             border: 3px solid rgba(255,255,255,0.15);
             background: #1a1a2e;
@@ -152,7 +149,6 @@
 
         canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 
-        /* ── Popups (shared) ─────────────────────────────── */
         .popup {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.7);
@@ -203,7 +199,6 @@
         .no-btn  { background: linear-gradient(135deg, #7c3aed, #a855f7); }
         #exitConfirmYesBtn { background: linear-gradient(135deg, #dc3545, #c82333); }
 
-        /* ── Side menu ───────────────────────────────────── */
         #sideMenu {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.8);
@@ -233,7 +228,6 @@
             font-size: 1.2em; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center;
         }
 
-        /* ── Level select ────────────────────────────────── */
         .level-screen-content { max-width: 580px !important; width: 92% !important; max-height: 82vh; overflow-y: auto; position: relative; }
         #levelGrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; padding: 8px 18px 18px; }
         .level-item { aspect-ratio: 1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:8px; font-size:0.95em; font-weight:700; color:rgba(255,255,255,0.2); cursor:not-allowed; transition:all 0.2s; }
@@ -249,7 +243,6 @@
 
         #sideUi { display: none; }
 
-        /* ── History list ────────────────────────────────── */
         #historyList { list-style:none; padding:0; margin:0; }
         .history-item { background:rgba(255,255,255,0.05); padding:8px; margin-bottom:6px; border-radius:5px; display:flex; justify-content:space-between; font-size:0.85em; }
         .history-win  { border-left:3px solid #4caf50; }
@@ -263,7 +256,6 @@
 </head>
 <body>
 
-    <!-- Cheat panel -->
     <div id="cheatPanel">
         <span class="cheat-label">⚡ Level Tester</span>
         <div class="quick-btns" id="quickBtns"></div>
@@ -273,7 +265,6 @@
         </div>
     </div>
 
-    <!-- Stats header -->
     <div id="ui">
         <div class="ui-row">
             <div class="ui-item"><div class="ui-label">Score</div><div class="ui-value" id="score">0</div></div>
@@ -294,7 +285,6 @@
     <div id="sideUi"></div>
     <div id="gameContainer"></div>
 
-    <!-- Username popup (hidden immediately by script) -->
     <div id="usernamePopup" class="popup show">
         <div class="popup-content">
             <h2>Welcome!</h2>
@@ -305,7 +295,6 @@
         </div>
     </div>
 
-    <!-- Game over / win popup -->
     <div id="gamePopup" class="popup">
         <div class="popup-content">
             <h2 id="popupTitle"></h2>
@@ -314,7 +303,6 @@
         </div>
     </div>
 
-    <!-- Exit confirm -->
     <div id="exitConfirmPopup" class="popup">
         <div class="popup-content">
             <h2>Exit?</h2>
@@ -326,7 +314,6 @@
         </div>
     </div>
 
-    <!-- Level select -->
     <div id="levelSelectScreen" class="popup">
         <div class="popup-content level-screen-content">
             <button id="closeLevelSelectIcon" class="close-icon">&times;</button>
@@ -335,7 +322,6 @@
         </div>
     </div>
 
-    <!-- Level start popup -->
     <div id="levelStartPopup" class="popup">
         <div class="popup-content level-start-content">
             <h2 id="levelStartTitle">Level 1</h2>
@@ -347,7 +333,6 @@
         </div>
     </div>
 
-    <!-- Side menu -->
     <div id="sideMenu">
         <div class="menu-popup-content">
             <button id="closeMenuIcon" class="close-icon">&times;</button>
@@ -371,21 +356,17 @@
     <script type="module">
         import { BreakoutGame } from './src/game.ts';
 
-        // ── Unlock all 30 levels ─────────────────────────
         localStorage.setItem('breakout_highestLevel', '30');
         const TESTER_NAME = 'TESTER';
         sessionStorage.setItem('breakoutUsername', TESTER_NAME);
 
-        // ── Boot game ────────────────────────────────────
         const game = new BreakoutGame();
         await game.start();
 
-        // Skip username popup immediately
         game.username = TESTER_NAME;
         document.getElementById('usernamePopup').classList.remove('show');
         game.initializeGame();
 
-        // ── Cheat panel: quick-jump buttons ──────────────
         const QUICK_LEVELS = [1, 5, 10, 15, 20, 25, 30];
         const quickBtns = document.getElementById('quickBtns');
         QUICK_LEVELS.forEach(n => {
@@ -406,14 +387,12 @@
         });
 
         function jumpTo(level) {
-            // Re-ensure all levels stay unlocked (game.startLevel checks this)
             localStorage.setItem('breakout_highestLevel', '30');
             game.highestLevelUnlocked = 30;
             game.startLevel(level);
             document.getElementById('levelInput').value = level;
         }
 
-        // ── Menu wiring (same as index.html) ─────────────
         const menuBtn   = document.getElementById('menuBtn');
         const sideMenu  = document.getElementById('sideMenu');
         const closeMenu = document.getElementById('closeMenuIcon');

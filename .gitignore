@@ -32,3 +32,15 @@ yarn-error.log*
 
 # Graft code graph cache
 graft/
+
+# Claude Code / Graft tooling
+.claude/
+.mcp.json
+.ignore
+
+# Unused legacy files
+BUILD_GUIDE.md
+scripts/convert-to-webp.js
+public/assets/HalloweenCreature/
+src/assets/HalloweenCreature/
+src/assets/images/background/

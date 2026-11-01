@@ -14,7 +14,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": [] // prevent auto-inclusion of legacy @types packages
+    "types": []
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist 0"]
